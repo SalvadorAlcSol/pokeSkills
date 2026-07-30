@@ -6,124 +6,117 @@ export interface PokemonLore {
 }
 
 export const POKEMON_LORE_DATABASE: Record<string, PokemonLore> = {
-  swampert: {
-    story: 'Swampert es la evolución final de Mudkip, el inicial de tipo Agua de la región de Hoenn. Conocido como el "Pokémon Pez Lodo", posee una fuerza física colosal capaz de arrastrar rocas de más de una tonelada y nadar tan rápido como una moto acuática.',
-    biology: 'Posee aletas pectorales y dorsales ultra sensibles que le permiten detectar cambios en las corrientes de agua y predecir tormentas o maremotos inminentes. Sus brazos son tan duros como el acero.',
+  zacian: {
+    story: 'Zacian es el legendario Pokémon de la región de Galar conocido en los mitos antiguos como el "Héroe de la Espada". En la era remota, unió fuerzas con Zamazenta y los reyes humanos de Galar para detener la catástrofe de la "Noche Negra" provocada por el inconmensurable Eternatus.',
+    biology: 'En su forma base (Guerrero Avezado) vaga como un lobo solitario portando cicatrices de batallas milenarias. Al sostener la Espada Oxidada en su hocico, absorbe la energía del planeta y se transforma en su Forma Espada Suprema, imbuido de un áura dorada resplandeciente.',
     trivia: [
-      'Tiene la suma de estadísticas base más alta entre todos los Pokémon iniciales de agua en sus primeras generaciones.',
-      'Su combinación de tipos Agua/Tierra solo le otorga una única debilidad: el tipo Planta (recibe daño 4x en los juegos principales y 2.56x en Pokémon GO).',
-      'En la Liga de Combates GO (Liga Súper y Ultra), Swampert con el ataque legado Hidrocañón es uno de los líderes históricos del metagame.'
+      'Su ataque característico es Tajo Supremo (Behemoth Blade), una estocada legendaria capaz de hendir océanos y cortar el acero como papel.',
+      'En el anime "Pokémon Viajes", Zacian se manifiesta como una entidad guardiana ante Ash Ketchum en el Bosque Corona antes de unirse a la batalla final contra Eternatus Dinamax.',
+      'Al transformarse en Espada Suprema, su tipo cambia de Hada puro a Hada/Acero, otorgándole una cobertura defensiva casi impenetrable.'
     ],
-    funFact: '¡Swampert puede predecir tsunamis con solo tocar el agua con sus aletas!'
+    funFact: '¡Su espada es tan afilada que puede cortar montañas enteras con una sola estocada veloz!'
+  },
+  zaciancrowned: {
+    story: 'Zacian Espada Suprema es la verdadera forma manifestada del héroe legendario de Galar cuando empuña la Espada Oxidada. Su espada dorada resplandece con una energía capaz de desintegrar la mismísima distorsión espacial de Eternatus.',
+    biology: 'Mantiene la Espada Oxidada aferrada firmemente con sus mandíbulas. Se desplaza a velocidades supersónicas que superan la vista humana, pareciendo un rayo dorado en el campo de batalla.',
+    trivia: [
+      'Posee el ataque insignia Tajo Supremo (Behemoth Blade), de tipo Acero con una potencia devastadora de 160.',
+      'En los videojuegos principales (Pokémon Espada y Escudo), Tajo Supremo causa el doble de daño a Pokémon en estado Dinamax o Gigamax.',
+      'Forma junto a Zamazenta Escudo Supremo la dupla de guardianes legendarios de la región de Galar.'
+    ],
+    funFact: '¡Se dice que su espada jamás ha sufrido una sola mella en más de tres mil años de historia!'
+  },
+  zamazenta: {
+    story: 'Zamazenta es el legendario "Héroe del Escudo" de Galar. Junto a Zacian, protegió los reinos de la antigüedad del colapso energético de la Noche Negra, sirviendo como el baluarte inquebrantable de la humanidad.',
+    biology: 'Al equipar el Escudo Oxidado, su pelaje frontal se convierte en un escudo de aleación dorada impenetrable capaz de repeler cualquier ataque o rayo de energía elemental.',
+    trivia: [
+      'Su ataque distintivo es Embate Supremo (Behemoth Bash), de tipo Acero.',
+      'Al adoptar la Forma Escudo Supremo, su tipo evoluciona de Lucha puro a Lucha/Acero.',
+      'En la serie animada de Pokémon, protege la región de Galar junto a Goh en el Climax de la crisis de Puntera.'
+    ],
+    funFact: '¡Su escudo frontal puede soportar la explosión simultánea de mil bombas sin moverse un solo milímetro!'
+  },
+  swampert: {
+    story: 'Swampert es la evolución final de Mudkip, el inicial de Agua de Hoenn. Es famoso en la franquicia por su inmensa fuerza física y por acompañar a entrenadores en aventuras marítimas y montañosas.',
+    biology: 'Posee aletas sensoriales hiperdesarrolladas capaces de detectar maremotos o cambios de clima. Sus brazos tienen una densidad ósea comparable al titanio.',
+    trivia: [
+      'En los videojuegos principales, posee la suma de estadísticas base más alta de todos los Pokémon iniciales de Agua.',
+      'Su tipo dual Agua/Tierra solo le otorga una única debilidad elemental en toda la tabla de tipos: el tipo Planta.',
+      'En el anime, fue el Pokémon insignia del líder de gimnasio Brock durante sus viajes por Hoenn.'
+    ],
+    funFact: '¡Puede nadar tan rápido como una lancha de carreras y mover rocas de varias toneladas con un solo brazo!'
   },
   charizard: {
-    story: 'Charizard es el icónico Pokémon Llama de la región de Kanto. Vuela por los cielos en busca de oponentes poderosos y escupe fuego a temperaturas tan extremas que es capaz de derretir glaciares enteros.',
-    biology: 'La llama en la punta de su cola refleja su salud y estado emocional. Si la llama arde con un tono azul intenso, significa que Charizard está en su punto máximo de poder de combate.',
+    story: 'Charizard es el icónico Pokémon Llama de Kanto. Famoso por ser el compañero rebelde y heroico de Ash Ketchum en el anime original, es una de las criaturas más queridas en la historia del entretenimiento.',
+    biology: 'Vuela alto por los cielos buscando rivales a su altura. La intensidad de la llama de su cola aumenta exponencialmente a medida que su espíritu de lucha se enciende.',
     trivia: [
-      'Es uno de los pocos Pokémon en poseer dos Megaevoluciones distintas (Mega Charizard X y Mega Charizard Y).',
-      'En Pokémon GO, su ataque de evento de Día de la Comunidad "Anillo de Fuego" lo convierte en uno de los atacantes de fuego más devastadores en Incursiones.',
-      'A pesar de tener alas y volar, su tipo primario es Fuego/Volador (no Dragón), excepto en su forma Mega Charizard X.'
+      'Es uno de los pocos Pokémon con dos Megaevoluciones distintas: Mega Charizard X (Fuego/Dragón) y Mega Charizard Y (Fuego/Volador).',
+      'En el anime original, derrotó al legendario Articuno de Noland en la Fábrica de la Batalla.',
+      'Fue el Pokémon estrella del Campeón de Kanto y Galar, Lionel (Leon).'
     ],
-    funFact: 'Su aliento de fuego jamás arderá contra un rival más débil que él.'
-  },
-  dragonite: {
-    story: 'Dragonite es el legendario Pokémon Dragón de la primera generación. A pesar de su cuerpo robusto y de apariencia amigable, es capaz de dar la vuelta al mundo en solo 16 horas alcanzando velocidades supersónicas.',
-    biology: 'Conocido como el "Guardián del Mar", es una criatura de gran bondad que rescata a marineros a la deriva durante violentas tormentas oceánicas.',
-    trivia: [
-      'Fue el primer Pokémon pseudo-legendario de la historia de la franquicia.',
-      'En Pokémon GO Master League, Dragonite es una piedra angular indiscutible gracias a su combinación de Garra Dragón y Garra Dragón / Cometa Draco.',
-      'Su inteligencia rivaliza con la de los seres humanos.'
-    ],
-    funFact: 'Existe un mito en el mundo Pokémon sobre una isla secreta habitada únicamente por comunidades de Dragonite.'
-  },
-  metagross: {
-    story: 'Metagross es un Pokémon pseudo-legendario de tipo Acero/Psíquico. Nace de la fusión de dos Metang (que a su vez nacieron de la fusión de dos Beldum), dándole un total de cuatro cerebros conectados en red.',
-    biology: 'Sus cuatro cerebros funcionan en paralelo como una supercomputadora cuántica. Puede calcular complejas trayectorias de ataque y predecir los movimientos del enemigo en milisegundos.',
-    trivia: [
-      'Metagross con el movimiento de evento "Puño Meteoro" es el atacante de tipo Acero no-legendario con el DPS más alto en Pokémon GO.',
-      'Cuando Megaevoluciona en Mega Metagross, sus patas se transforman en brazos gigantescos flotantes.',
-      'Es el Pokémon insignia de Steven Stone (Máximo Peñas), el Campeón de la Liga Pokémon de Hoenn.'
-    ],
-    funFact: '¡Sus 4 cerebros juntos son más rápidos que la computadora más avanzada del mundo!'
-  },
-  groudon: {
-    story: 'Groudon es el Pokémon Continental legendario que personifica la masa terrestre. Desde la antigüedad, se dice que libró titánicas batallas contra Kyogre para expandir los continentes y evaporar los océanos.',
-    biology: 'Al absorber la energía de la naturaleza, Groudon puede acceder a su Regresión Primigenia (Groudon Primigenio), imbuyendo su cuerpo con magma ardiente y alcanzando un poder cósmico.',
-    trivia: [
-      'En su forma Primigenia gana el tipo Fuego secundario, convirtiéndose en tipo Tierra/Fuego.',
-      'Su ataque característico es "Filo del Abismo" (Precipice Blades), el ataque cargado de tipo Tierra más poderoso en Pokémon GO.',
-      'Tiene el poder de despejar tormentas e invocar un sol abrasador de forma instantánea.'
-    ],
-    funFact: 'Duerme profundamente en pozos de magma subterráneos en el manto terrestre.'
-  },
-  kyogre: {
-    story: 'Kyogre es el Pokémon Cuenca legendario de Hoenn. Posee el control absoluto sobre los océanos y es capaz de expandir los mares creando lluvias torrenciales y marejadas gigantescas.',
-    biology: 'En su forma Primigenia (Kyogre Primigenio), su cuerpo se vuelve parcialmente translúcido, revelando una energía azul brillante capaz de sumergir continentes enteros.',
-    trivia: [
-      'Su movimiento signature es "Origen Primigenio" (Origin Pulse).',
-      'Es considerado el atacante de agua #1 en Incursiones de Pokémon GO.',
-      'Su habilidad en los juegos principales (Llovizna) altera el clima del planeta entero.'
-    ],
-    funFact: 'Se dice que Kyogre salvó al mundo antiguo de las sequías llenando las cuencas con agua pura.'
+    funFact: '¡Su aliento de fuego alcanza temperaturas capaces de derretir glaciares y rocas sólidas en segundos!'
   },
   rayquaza: {
-    story: 'Rayquaza es el Pokémon Cielo legendario que habita en la capa de ozono, muy por encima de las nubes. Ha volado durante millones de años alimentándose de agua y meteoritos.',
-    biology: 'Desciende a la superficie del planeta únicamente cuando Groudon y Kyogre despiertan para detener sus combates destructivos y restablecer el equilibrio climático.',
+    story: 'Rayquaza es el señor de los cielos y guardián de la capa de ozono del planeta. Es el líder supremo del trío creador de Hoenn junto a Groudon y Kyogre.',
+    biology: 'Habita a miles de metros de altura en la estratosfera. Desciende únicamente a la superficie cuando los titanes Groudon y Kyogre despiertan para sofocar su furioso combate.',
     trivia: [
-      'Mega Rayquaza posee una estadística de ataque colosal en Pokémon GO y su movimiento "Ascenso Draco" (Dragon Ascent) es de los más fuertes del juego.',
-      'Es el líder del trío creador de Hoenn (Groudon, Kyogre y Rayquaza).',
-      'Su color variocolor (Shiny) es negro azabache con dorados, considerado uno de los variocolores más populares.'
+      'Fue el primer Pokémon en la historia en poder Megaevolucionar mediante un movimiento aprendido (Ascenso Draco) en lugar de una Megapiedra.',
+      'En la película animada "El Destino de Deoxys", protagonizó una batalla épica en los límites del espacio exterior.',
+      'Su variante variocolor (Shiny) de color negro azabache es una de las más cotizadas por los coleccionistas.'
     ],
-    funFact: '¡Jamás toca el suelo! Pasa toda su vida flotando en la estratosfera.'
+    funFact: '¡Jamás toca el suelo! Pasa siglos enteros flotando plácidamente en la estratosfera comiendo meteoritos.'
   },
   mewtwo: {
-    story: 'Mewtwo es un Pokémon legendario creado por manipulación genética a partir del ADN de Mew. Fue diseñado por científicos para ser el luchador definitivo, pero sus extraordinarios poderes psíquicos superaron todo control.',
-    biology: 'Posee una mente psíquica tan poderosa que puede levitar, comunicarse por telepatía y bloquear ataques enemigos con barreras de energía pura.',
+    story: 'Mewtwo es la creación científica definitiva de Isla Cayo. Fue clonado genéticamente a partir del ADN de Mew con el objetivo de crear el luchador indestructible.',
+    biology: 'Posee habilidades psíquicas capaces de manipular la gravedad, crear tormentas globales con el pensamiento y comunicarse por telepatía con los seres humanos.',
     trivia: [
-      'En Pokémon GO, Mewtwo con "Onda Mental" (Psystrike) tiene una de las salidas de daño neutral más altas del juego.',
-      'Cuenta con dos Megaevoluciones: Mega Mewtwo X (Psíquico/Lucha) y Mega Mewtwo Y (Psíquico puro).',
-      'Su corazón es frío debido a los dolorosos experimentos que sufrió en su creación.'
+      'Protagonizó la primera película de cine de Pokémon "Mewtwo vs. Mew" (1998), dejando un mensaje filosófico inolvidable sobre el valor de la vida.',
+      'Cuenta con dos formas Megaevolucionadas: Mega Mewtwo X (Psíquico/Lucha) y Mega Mewtwo Y (Psíquico puro).',
+      'En los videojuegos de la primera generación (Rojo/Azul/Amarillo), habitaba en el fondo de la Cueva Celeste de Ciudad Verde.'
     ],
-    funFact: 'Descansa inmóvil dentro de cumbres oscuras para conservar al máximo su energía psíquica.'
+    funFact: 'Descansa en trance meditativo dentro de cavernas profundas para contener su abrumadora energía psíquica.'
   },
   lucario: {
-    story: 'Lucario es el Pokémon Aura de tipo Lucha/Acero de la región de Sinnoh. Tiene la habilidad única de percibir las auras de todos los seres vivos a kilómetros de distancia.',
-    biology: 'Al leer el aura de un adversario, Lucario puede predecir sus pensamientos, emociones y movimientos exactos en combate antes de que sucedan.',
+    story: 'Lucario es el Pokémon Aura de Sinnoh. Posee una sintonía espiritual profunda que le permite canalizar el aura vital de los seres vivos en poderosos ataques defensivos y ofensivos.',
+    biology: 'Puede leer los sentimientos, pensamientos y movimientos de amigos y enemigos a kilómetros de distancia mediante sus apéndices sensores de aura.',
     trivia: [
-      'Su ataque característico "Esfera Aural" (Aura Sphere) nunca falla y causa un daño masivo.',
-      'Es uno de los Pokémon más usados en Incursiones y Combates de Gimnasio contra tipos Normal, Roca y Acero.',
-      'Puede comprender el lenguaje humano perfectamente mediante su lectura de auras.'
+      'Fue el protagonista de la película "Lucario y el Misterio de Mew", donde sacrificó su vida para salvar el Árbol del Comienzo.',
+      'Su ataque característico "Esfera Aural" es una concentración de energía espiritual que jamás falla su objetivo.',
+      'Es el Pokémon compañero del Campeón Ash Ketchum en su equipo ganador del Campeonato Mundial de Entrenadores.'
     ],
-    funFact: '¡Puede detectar la presencia de una persona a más de un kilómetro de distancia aunque no la vea!'
+    funFact: '¡Puede detectar la presencia y emociones de una persona a más de un kilómetro de distancia aunque esté oculta!'
   },
   gengar: {
-    story: 'Gengar es el icónico Pokémon Sombra de tipo Fantasma/Veneno de la primera generación. Se oculta en las sombras de las casas y callejones para absorber el calor del ambiente y gastar travesuras.',
-    biology: 'Cuando Gengar se esconde cerca, la temperatura ambiente cae drásticamente casi 10°C. Le apasiona aterrorizar a los viajeros desvalidos.',
+    story: 'Gengar es el legendario Pokémon Sombra de Kanto. Se oculta en los rincones oscuros de la noche para asustar a los caminantes y gastar bromas pesadas.',
+    biology: 'Cuando se oculta en la sombra de alguien, roba el calor del ambiente provocando una caída drástica de más de 10°C de temperatura instantánea.',
     trivia: [
-      'Mega Gengar es uno de los atacantes de tipo Fantasma con mayor DPS en todo Pokémon GO.',
-      'Existen teorías populares que sugieren que Gengar es la sombra viviente del Pokémon Clefable.',
-      'A pesar de ser tipo Veneno, su rol principal en PvP y Raids es como demoledor de tipo Fantasma.'
+      'Una famosa teoría de fans de la franquicia sostiene que Gengar es la sombra cobra vida del Pokémon Clefable.',
+      'Posee una forma Gigamax en Galar donde su boca se transforma en un portal directo al inframundo.',
+      'Fue un miembro destacado del equipo campeón de Ash Ketchum en Pokémon Viajes.'
     ],
-    funFact: 'Si sientes un escalofrío repentino en una habitación cerrada, ¡un Gengar anda cerca observándote!'
+    funFact: '¡Si sientes un escalofrío helado repentino en la espalda, hay un Gengar riéndose justo detrás de ti!'
   }
 };
 
 export function getPokemonLore(pokemonName: string, types: string[]): PokemonLore {
-  const normalizedKey = pokemonName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  
-  if (POKEMON_LORE_DATABASE[normalizedKey]) {
-    return POKEMON_LORE_DATABASE[normalizedKey];
+  const cleanName = (pokemonName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  for (const [key, lore] of Object.entries(POKEMON_LORE_DATABASE)) {
+    if (cleanName.includes(key) || key.includes(cleanName)) {
+      return lore;
+    }
   }
 
   const typesFormatted = types.map((t) => t.toUpperCase()).join(' y ');
+
   return {
-    story: `${pokemonName} es una criatura destacada dentro del mundo Pokémon de tipo ${typesFormatted}. Es valorado por los entrenadores debido a su versatilidad táctica y potencia de combate en Pokémon GO.`,
-    biology: `Como Pokémon de tipo ${typesFormatted}, posee facultades adaptadas a su entorno natural. Su estructura física le permite canalizar movimientos elementales de alta efectividad en combates de Gimnasios e Incursiones.`,
+    story: `${pokemonName} es un emblemático Pokémon de tipo ${typesFormatted}. Dentro de la saga principal de videojuegos y la serie animada de Pokémon, destaca por su rol en la ecología de su región de origen y su gran lealtad hacia sus entrenadores.`,
+    biology: `Como especie de tipo ${typesFormatted}, cuenta con adaptaciones biológicas naturales para dominar su hábitat. Canaliza energía elemental a través de sus movimientos característicos en combates de Liga y Gimnasio.`,
     trivia: [
-      `En Pokémon GO, sus estadísticas base de ataque, defensa y salud determinan su PC Máximo y rendimiento en Ligas PvP.`,
-      `Aprovecha el bono STAB (Same Type Attack Bonus) del 20% al utilizar ataques que coincidan con su tipo elemental (${typesFormatted}).`,
-      `Al potenciar sus IVs al 100% (15/15/15), alcanza su rendimiento de combate óptimo.`
+      `En la saga de videojuegos de Pokémon, aprende movimientos elementales de tipo ${typesFormatted} por nivel y MTs.`,
+      `Forma parte de la Pokédex regional y es altamente valorado por coleccionistas por su diseño y biología única.`,
+      `Ha hecho apariciones en la serie animada de Pokémon demostrando grandes hazañas de valentía y trabajo en equipo.`
     ],
-    funFact: `¡Los entrenadores veteranos frecuentemente incluyen a ${pokemonName} en sus equipos para cubrir debilidades clave de tipo!`
+    funFact: `¡Los entrenadores de la saga Pokémon suelen incluir a ${pokemonName} en su equipo principal por su excelente cobertura en batalla!`
   };
 }

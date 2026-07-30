@@ -1,4 +1,5 @@
-import { POGO_DATABASE } from '../data/pogoDatabase';
+import { POGO_DATABASE, PogoMove, PogoPokemon, SpecialForm } from '../data/pogoDatabase';
+import { PokemonType } from '../data/pokemonData';
 
 export function getSpecialFormSpriteUrl(speciesId: string): string {
   if (!speciesId) {
@@ -305,4 +306,127 @@ export function getAvailableFormsForSpecies(speciesId: string, name: string): Av
   }
 
   return options;
+}
+
+export interface FullPokemonDetails {
+  id: number;
+  speciesId: string;
+  displayName: string;
+  types: PokemonType[];
+  baseAttack: number;
+  baseDefense: number;
+  baseStamina: number;
+  spriteUrl: string;
+  fastMoves: PogoMove[];
+  chargedMoves: PogoMove[];
+  buddyDistanceKm: number;
+  secondMoveStardust: number;
+  secondMoveCandy: number;
+  isTradeable: boolean;
+  tradeNote: string;
+  isLegendaryOrMythical: boolean;
+}
+
+export function resolveFullPokemonDetails(speciesId: string = '', name: string = ''): FullPokemonDetails {
+  const cleanSpeciesId = String(speciesId).toLowerCase().trim();
+  const cleanName = String(name).toLowerCase().trim();
+  const combined = `${cleanSpeciesId} ${cleanName}`.replace(/[^a-z0-9]/g, '');
+
+  let matchedPoke: PogoPokemon | undefined;
+  let matchedForm: SpecialForm | undefined;
+
+  for (const p of POGO_DATABASE) {
+    const pIdStr = p.id.toString();
+    const pNameClean = p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (cleanSpeciesId.startsWith(pIdStr) || cleanName.includes(pNameClean) || pNameClean.includes(cleanName.split(' ')[0])) {
+      matchedPoke = p;
+      const forms = p.specialForms || p.megaForms;
+      if (forms) {
+        for (const f of forms) {
+          const fIdClean = f.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const fNameClean = f.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+          if (
+            cleanSpeciesId.includes(fIdClean) ||
+            cleanName.includes(fNameClean) ||
+            combined.includes(fIdClean) ||
+            combined.includes(fNameClean)
+          ) {
+            matchedForm = f;
+            break;
+          }
+        }
+      }
+      if (matchedForm) break;
+    }
+  }
+
+  const baseP = matchedPoke || POGO_DATABASE[0];
+  const form = matchedForm;
+
+  const id = baseP.id;
+  const resolvedSpeciesId = form ? `${baseP.id}-${form.id}` : `${baseP.id}`;
+  const displayName = form ? form.name : (name || baseP.name);
+  const types = form ? form.types : baseP.types;
+  const baseAttack = form ? form.baseAttack : baseP.baseAttack;
+  const baseDefense = form ? form.baseDefense : baseP.baseDefense;
+  const baseStamina = form ? form.baseStamina : baseP.baseStamina;
+  const spriteUrl = form ? form.spriteUrl : baseP.spriteUrl;
+
+  const fastMoves = (form && form.fastMoves && form.fastMoves.length > 0) ? form.fastMoves : baseP.fastMoves;
+  const chargedMoves = (form && form.chargedMoves && form.chargedMoves.length > 0) ? form.chargedMoves : baseP.chargedMoves;
+
+  // Determine Legendary / Mythical status
+  const legendaryIds = [
+    144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+    480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
+    716, 717, 718, 719, 720, 721, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
+    888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1017, 1024, 1025
+  ];
+
+  const mythicalNames = ['mew', 'celebi', 'jirachi', 'deoxys', 'phione', 'manaphy', 'darkrai', 'shaymin', 'arceus', 'victini', 'keldeo', 'meloetta', 'genesect', 'diancie', 'hoopa', 'volcanion', 'magearna', 'marshadow', 'zeraora', 'meltan', 'melmetal', 'zarude'];
+
+  const isMythical = mythicalNames.some((m) => cleanName.includes(m) || baseP.name.toLowerCase().includes(m));
+  const isLegendaryOrMythical = legendaryIds.includes(id) || isMythical || cleanName.includes('zacian') || cleanName.includes('zamazenta') || cleanName.includes('rayquaza') || cleanName.includes('mewtwo') || cleanName.includes('groudon') || cleanName.includes('kyogre');
+
+  // Pseudo-legendary / Dragon / Ultra rare
+  const pseudoIds = [147, 148, 149, 246, 247, 248, 371, 372, 373, 374, 375, 376, 443, 444, 445, 633, 634, 635, 704, 705, 706, 782, 783, 784, 885, 886, 887, 996, 997, 998];
+  const isPseudoOrRare = pseudoIds.includes(id) || types.includes('dragon') || cleanName.includes('riolu') || cleanName.includes('lucario') || cleanName.includes('snorlax') || cleanName.includes('lapras');
+
+  let buddyDistanceKm = 3.0;
+  let secondMoveStardust = 50000;
+  let secondMoveCandy = 50;
+
+  if (isLegendaryOrMythical) {
+    buddyDistanceKm = 20.0;
+    secondMoveStardust = 100000;
+    secondMoveCandy = 100;
+  } else if (isPseudoOrRare) {
+    buddyDistanceKm = 5.0;
+    secondMoveStardust = 75000;
+    secondMoveCandy = 75;
+  }
+
+  const isTradeable = !isMythical;
+  const tradeNote = isMythical ? 'No permitido (Mítico)' : isLegendaryOrMythical ? 'Permitido (Especial - 1/día)' : 'Permitido (Sí)';
+
+  return {
+    id,
+    speciesId: resolvedSpeciesId,
+    displayName,
+    types,
+    baseAttack,
+    baseDefense,
+    baseStamina,
+    spriteUrl,
+    fastMoves,
+    chargedMoves,
+    buddyDistanceKm,
+    secondMoveStardust,
+    secondMoveCandy,
+    isTradeable,
+    tradeNote,
+    isLegendaryOrMythical
+  };
 }

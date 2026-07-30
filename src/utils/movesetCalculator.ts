@@ -91,7 +91,9 @@ export function calculatePokemonMovesetAnalysis(
   rawTypes: PokemonType[] = [],
   baseAttack: number,
   baseDefense: number,
-  baseStamina: number
+  baseStamina: number,
+  customFastMoves?: PogoMove[],
+  customChargedMoves?: PogoMove[]
 ): MovesetAnalysisResult {
   const pokemonTypes: PokemonType[] =
     rawTypes && Array.isArray(rawTypes) && rawTypes.length > 0 ? rawTypes : ['normal'];
@@ -99,12 +101,19 @@ export function calculatePokemonMovesetAnalysis(
   const normalizedSearch = (pokemonName || '').toLowerCase().split(' ')[0];
   const dbMatch = POGO_DATABASE.find((p) => p.name.toLowerCase().includes(normalizedSearch));
 
-  const rawFastMoves: PogoMove[] = dbMatch?.fastMoves || [
-    { id: 'fast_1', name: 'Ataque Rápido', type: pokemonTypes[0] || 'normal', power: 10, energy: 9, typeCategory: 'fast' }
-  ];
-  const rawChargedMoves: PogoMove[] = dbMatch?.chargedMoves || [
-    { id: 'charged_1', name: 'Ataque Cargado', type: pokemonTypes[0] || 'normal', power: 90, energy: 50, typeCategory: 'charged' }
-  ];
+  const rawFastMoves: PogoMove[] =
+    customFastMoves && customFastMoves.length > 0
+      ? customFastMoves
+      : dbMatch?.fastMoves || [
+          { id: 'fast_1', name: 'Ataque Rápido', type: pokemonTypes[0] || 'normal', power: 10, energy: 9, typeCategory: 'fast' }
+        ];
+
+  const rawChargedMoves: PogoMove[] =
+    customChargedMoves && customChargedMoves.length > 0
+      ? customChargedMoves
+      : dbMatch?.chargedMoves || [
+          { id: 'charged_1', name: 'Ataque Cargado', type: pokemonTypes[0] || 'normal', power: 90, energy: 50, typeCategory: 'charged' }
+        ];
 
   // 1. Process Fast Moves
   const processedFastMoves: FastMoveDetail[] = rawFastMoves.map((m) => {

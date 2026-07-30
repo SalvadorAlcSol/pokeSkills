@@ -26,7 +26,7 @@ import { getPvpAnalysis, PvpLeague } from '../utils/pvpRecommender';
 import { calculatePokemonMovesetAnalysis } from '../utils/movesetCalculator';
 import { PokemonType } from '../data/pokemonData';
 import { POGO_DATABASE } from '../data/pogoDatabase';
-import { getSpecialFormSpriteUrl } from '../utils/pokemonUtils';
+import { getSpecialFormSpriteUrl, resolveFullPokemonDetails } from '../utils/pokemonUtils';
 
 interface PokemonDetailModalProps {
   pokemon: UserPokemon;
@@ -66,52 +66,48 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
 
   if (!pokemon) return null;
 
-  // Database base stats & types lookup
-  const normalizedSearch = (pokemon.name || '').toLowerCase().split(' ')[0];
-  const dbMatch = POGO_DATABASE.find(
-    (p) =>
-      p.id.toString() === String(pokemon.speciesId || '').split('-')[0] ||
-      p.name.toLowerCase() === (pokemon.name || '').toLowerCase() ||
-      p.name.toLowerCase().includes(normalizedSearch)
-  );
+  // Resolve full form stats, types, movesets and Pokédex specs
+  const fullDetails = resolveFullPokemonDetails(pokemon.speciesId || '', pokemon.name || '');
 
   const pokemonTypes: PokemonType[] =
     pokemon.types && Array.isArray(pokemon.types) && pokemon.types.length > 0
       ? pokemon.types
-      : dbMatch?.types && dbMatch.types.length > 0
-      ? dbMatch.types
+      : fullDetails.types && fullDetails.types.length > 0
+      ? fullDetails.types
       : ['normal'];
 
-  const baseAtk = dbMatch?.baseAttack || 200;
-  const baseDef = dbMatch?.baseDefense || 180;
-  const baseSta = dbMatch?.baseStamina || 180;
-  const pokedexNo = dbMatch?.id || parseInt(String(pokemon.speciesId || '0'), 10) || 0;
+  const baseAtk = fullDetails.baseAttack;
+  const baseDef = fullDetails.baseDefense;
+  const baseSta = fullDetails.baseStamina;
+  const pokedexNo = fullDetails.id;
 
   // High-def Artwork Resolution
   const rawSprite = pokemon.spriteUrl && !pokemon.spriteUrl.endsWith('/0.png') ? pokemon.spriteUrl : '';
   const displaySpriteUrl =
     rawSprite ||
     getSpecialFormSpriteUrl(pokemon.speciesId || pokemon.name) ||
-    dbMatch?.spriteUrl ||
+    fullDetails.spriteUrl ||
     'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png';
 
-  // Movesets, DPS & EPS Analysis
+  // Movesets, DPS & EPS Analysis (passing form-specific moves)
   const movesetAnalysis = calculatePokemonMovesetAnalysis(
-    pokemon.name || 'Pokemon',
+    pokemon.name || fullDetails.displayName,
     pokemonTypes,
     baseAtk,
     baseDef,
-    baseSta
+    baseSta,
+    fullDetails.fastMoves,
+    fullDetails.chargedMoves
   );
 
   // Type effectiveness analysis
   const { weaknesses, resistances } = getPokemonWeaknessesAndResistances(pokemonTypes);
 
-  // Lore & Trivia
-  const lore = getPokemonLore(pokemon.name || 'Pokemon', pokemonTypes);
+  // Lore & Trivia from Main Series & Anime
+  const lore = getPokemonLore(pokemon.name || fullDetails.displayName, pokemonTypes);
 
   // PvP League Analysis & Teammate Trio recommendations
-  const pvpInfo = getPvpAnalysis(pokemon.name || 'Pokemon', pokemonTypes, selectedLeague);
+  const pvpInfo = getPvpAnalysis(pokemon.name || fullDetails.displayName, pokemonTypes, selectedLeague);
 
   // Calculate IV Percentage
   const ivAtk = pokemon.ivAtk ?? 10;
@@ -688,17 +684,17 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
 
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">Distancia Compañero:</span>
-                  <strong className="text-slate-900 font-black">3.0 km / Caramelo</strong>
+                  <strong className="text-slate-900 font-black">{fullDetails.buddyDistanceKm.toFixed(1)} km / Caramelo</strong>
                 </div>
 
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">Intercambiable:</span>
-                  <strong className="text-emerald-600 font-black">Permitido (Sí)</strong>
+                  <strong className="text-emerald-600 font-black">{fullDetails.tradeNote}</strong>
                 </div>
 
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">Costo 2do Ataque:</span>
-                  <strong className="text-purple-700 font-black">10,000 / 50 Caramelos</strong>
+                  <strong className="text-purple-700 font-black">{fullDetails.secondMoveStardust.toLocaleString()} Polvo / {fullDetails.secondMoveCandy} Caramelos</strong>
                 </div>
 
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
