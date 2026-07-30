@@ -12,8 +12,8 @@ interface InventoryState {
   removePokemon: (id: string) => void;
   importPokemons: (pokemons: Omit<UserPokemon, 'id' | 'addedAt'>[]) => void;
   clearInventory: () => void;
-  syncFromCloud: () => Promise<void>;
-  syncToCloud: () => Promise<void>;
+  syncFromCloud: () => Promise<{ success: boolean; count: number; message: string }>;
+  syncToCloud: () => Promise<{ success: boolean; count: number; message: string }>;
 }
 
 export const useInventoryStore = create<InventoryState>()(
@@ -111,38 +111,59 @@ export const useInventoryStore = create<InventoryState>()(
       },
 
       syncFromCloud: async () => {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+          return { success: false, count: 0, message: 'Supabase no está configurado' };
+        }
         set({ isSyncing: true });
         try {
           const { data, error } = await supabase.from('pokemon_inventory').select('*');
-          if (!error && data && data.length > 0) {
+          if (error) {
+            console.error('Error fetching cloud inventory:', error);
+            return { success: false, count: 0, message: error.message };
+          }
+
+          if (data && data.length > 0) {
             const cloudItems: UserPokemon[] = data.map((row: any) => row.data);
             set({ inventory: cloudItems });
-          } else if (!error && (!data || data.length === 0)) {
-            // Cloud is empty. If local state has items, push them to cloud!
+            return { success: true, count: cloudItems.length, message: `Se descargaron ${cloudItems.length} Pokémon de la nube.` };
+          } else {
+            // Cloud is empty. If local state has items, push them to cloud automatically!
             const currentItems = get().inventory;
             if (currentItems.length > 0) {
               const rows = currentItems.map(p => ({ id: p.id, data: p, updated_at: new Date() }));
               await supabase.from('pokemon_inventory').upsert(rows);
+              return { success: true, count: currentItems.length, message: `Se subieron ${currentItems.length} Pokémon locales a la nube.` };
             }
+            return { success: true, count: 0, message: 'La nube de Supabase no contiene Pokémon aún.' };
           }
-        } catch (e) {
+        } catch (e: any) {
           console.warn('Error fetching cloud inventory:', e);
+          return { success: false, count: 0, message: e.message || 'Error de conexión' };
         } finally {
           set({ isSyncing: false });
         }
       },
 
       syncToCloud: async () => {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+          return { success: false, count: 0, message: 'Supabase no está configurado' };
+        }
         const currentItems = get().inventory;
-        if (currentItems.length === 0) return;
+        if (currentItems.length === 0) {
+          return { success: true, count: 0, message: 'No hay Pokémon en tu caja para subir.' };
+        }
         set({ isSyncing: true });
         try {
           const rows = currentItems.map(p => ({ id: p.id, data: p, updated_at: new Date() }));
-          await supabase.from('pokemon_inventory').upsert(rows);
-        } catch (e) {
+          const { error } = await supabase.from('pokemon_inventory').upsert(rows);
+          if (error) {
+            console.error('Error pushing to cloud:', error);
+            return { success: false, count: 0, message: error.message };
+          }
+          return { success: true, count: currentItems.length, message: `Se subieron ${currentItems.length} Pokémon a Supabase Cloud.` };
+        } catch (e: any) {
           console.warn('Error pushing to cloud inventory:', e);
+          return { success: false, count: 0, message: e.message || 'Error al subir a la nube' };
         } finally {
           set({ isSyncing: false });
         }

@@ -57,6 +57,16 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
   // Local state to track real-time Mega Evolution simulations per card
   const [simulatedMegas, setSimulatedMegas] = useState<Record<string, string>>({});
 
+  const handleManualSyncFromCloud = async () => {
+    const res = await syncFromCloud();
+    alert(res.message);
+  };
+
+  const handleManualSyncToCloud = async () => {
+    const res = await syncToCloud();
+    alert(res.message);
+  };
+
   React.useEffect(() => {
     if (isSupabaseConfigured) {
       syncFromCloud();
@@ -141,15 +151,26 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
             </button>
 
             {isSupabaseConfigured && (
-              <button
-                onClick={() => syncFromCloud()}
-                disabled={isSyncing}
-                className="px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-xs border border-blue-600 disabled:opacity-50"
-                title="Sincronizar automáticamente en la nube con Supabase"
-              >
-                <Cloud className={`w-4 h-4 ${isSyncing ? 'animate-spin text-yellow-300' : 'text-sky-300'}`} />
-                <span className="hidden lg:inline">{isSyncing ? 'Sincronizando...' : 'Nube Supabase'}</span>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleManualSyncFromCloud}
+                  disabled={isSyncing}
+                  className="px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-xs border border-blue-600 disabled:opacity-50"
+                  title="Descargar de la nube Supabase a este dispositivo"
+                >
+                  <Cloud className={`w-4 h-4 ${isSyncing ? 'animate-spin text-yellow-300' : 'text-sky-300'}`} />
+                  <span className="hidden lg:inline">{isSyncing ? 'Sincronizando...' : 'Descargar Nube'}</span>
+                </button>
+                <button
+                  onClick={handleManualSyncToCloud}
+                  disabled={isSyncing}
+                  className="px-2.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center gap-1 text-xs border border-indigo-600 disabled:opacity-50"
+                  title="Subir Pokémon locales a la nube Supabase"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-200" />
+                  <span className="hidden xl:inline">Subir Nube</span>
+                </button>
+              </div>
             )}
 
             {inventory.length > 0 && (
