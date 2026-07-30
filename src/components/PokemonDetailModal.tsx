@@ -54,40 +54,61 @@ const SOLID_TYPE_COLORS: Record<PokemonType, string> = {
   fairy: 'bg-pink-500 text-white border-pink-600 font-extrabold',
 };
 
+const getSolidTypeColor = (tItem: PokemonType | string): string => {
+  return SOLID_TYPE_COLORS[tItem as PokemonType] || 'bg-slate-700 text-white font-extrabold';
+};
+
 export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon, onClose, onEdit }) => {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'moves' | 'stats' | 'pvp' | 'lore'>('moves');
   const [selectedLeague, setSelectedLeague] = useState<PvpLeague>('great');
 
-  // Database base stats lookup
-  const normalizedSearch = pokemon.name.toLowerCase().split(' ')[0];
-  const dbMatch = POGO_DATABASE.find((p) => p.name.toLowerCase().includes(normalizedSearch));
+  if (!pokemon) return null;
+
+  // Database base stats & types lookup
+  const normalizedSearch = (pokemon.name || '').toLowerCase().split(' ')[0];
+  const dbMatch = POGO_DATABASE.find(
+    (p) =>
+      p.id.toString() === String(pokemon.speciesId || '').split('-')[0] ||
+      p.name.toLowerCase() === (pokemon.name || '').toLowerCase() ||
+      p.name.toLowerCase().includes(normalizedSearch)
+  );
+
+  const pokemonTypes: PokemonType[] =
+    pokemon.types && Array.isArray(pokemon.types) && pokemon.types.length > 0
+      ? pokemon.types
+      : dbMatch?.types && dbMatch.types.length > 0
+      ? dbMatch.types
+      : ['normal'];
 
   const baseAtk = dbMatch?.baseAttack || 200;
   const baseDef = dbMatch?.baseDefense || 180;
   const baseSta = dbMatch?.baseStamina || 180;
-  const pokedexNo = dbMatch?.id || parseInt(pokemon.speciesId, 10) || 0;
+  const pokedexNo = dbMatch?.id || parseInt(String(pokemon.speciesId || '0'), 10) || 0;
 
   // Movesets, DPS & EPS Analysis
   const movesetAnalysis = calculatePokemonMovesetAnalysis(
-    pokemon.name,
-    pokemon.types,
+    pokemon.name || 'Pokemon',
+    pokemonTypes,
     baseAtk,
     baseDef,
     baseSta
   );
 
   // Type effectiveness analysis
-  const { weaknesses, resistances } = getPokemonWeaknessesAndResistances(pokemon.types);
+  const { weaknesses, resistances } = getPokemonWeaknessesAndResistances(pokemonTypes);
 
   // Lore & Trivia
-  const lore = getPokemonLore(pokemon.name, pokemon.types);
+  const lore = getPokemonLore(pokemon.name || 'Pokemon', pokemonTypes);
 
   // PvP League Analysis & Teammate Trio recommendations
-  const pvpInfo = getPvpAnalysis(pokemon.name, pokemon.types, selectedLeague);
+  const pvpInfo = getPvpAnalysis(pokemon.name || 'Pokemon', pokemonTypes, selectedLeague);
 
   // Calculate IV Percentage
-  const ivPercent = Math.round(((pokemon.ivAtk + pokemon.ivDef + pokemon.ivHp) / 45) * 100);
+  const ivAtk = pokemon.ivAtk ?? 10;
+  const ivDef = pokemon.ivDef ?? 10;
+  const ivHp = pokemon.ivHp ?? 10;
+  const ivPercent = Math.round(((ivAtk + ivDef + ivHp) / 45) * 100);
 
   // Calculate Max CPs across key levels
   const cpLvl15 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 15, 15, 15, 15);
@@ -105,7 +126,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
           <div className="flex items-center gap-3">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-100 p-2 border-2 border-slate-300 shadow-md shrink-0 flex items-center justify-center relative">
               <img
-                src={pokemon.spriteUrl}
+                src={pokemon.spriteUrl || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'}
                 alt={pokemon.name}
                 className="w-full h-full object-contain drop-shadow-md"
               />
@@ -125,15 +146,15 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   #{pokedexNo}
                 </span>
                 <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-full">
-                  Nvl. {pokemon.level}
+                  Nvl. {pokemon.level || 30}
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                {pokemon.types.map((tItem) => (
+                {pokemonTypes.map((tItem) => (
                   <span
                     key={tItem}
-                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${SOLID_TYPE_COLORS[tItem]}`}
+                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${getSolidTypeColor(tItem)}`}
                   >
                     {getTypeLabel(tItem, language)}
                   </span>
@@ -299,7 +320,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                           </td>
                           <td className="py-2.5 px-3 font-extrabold text-slate-900">
                             <div className="flex items-center gap-1.5">
-                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${SOLID_TYPE_COLORS[combo.fastMove.type]}`}>
+                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${getSolidTypeColor(combo.fastMove.type)}`}>
                                 {getTypeLabel(combo.fastMove.type, language)}
                               </span>
                               <span>{combo.fastMove.spanishName}</span>
@@ -307,7 +328,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                           </td>
                           <td className="py-2.5 px-3 font-extrabold text-slate-900">
                             <div className="flex items-center gap-1.5">
-                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${SOLID_TYPE_COLORS[combo.chargedMove.type]}`}>
+                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${getSolidTypeColor(combo.chargedMove.type)}`}>
                                 {getTypeLabel(combo.chargedMove.type, language)}
                               </span>
                               <span>
@@ -342,7 +363,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   {movesetAnalysis.fastMoves.map((m) => (
                     <div key={m.id} className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${SOLID_TYPE_COLORS[m.type]}`}>
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${getSolidTypeColor(m.type)}`}>
                           {getTypeLabel(m.type, language)}
                         </span>
                         <span className="font-extrabold text-slate-900">{m.spanishName}</span>
@@ -362,7 +383,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   {movesetAnalysis.chargedMoves.map((m) => (
                     <div key={m.id} className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${SOLID_TYPE_COLORS[m.type]}`}>
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${getSolidTypeColor(m.type)}`}>
                           {getTypeLabel(m.type, language)}
                         </span>
                         <span className="font-extrabold text-slate-900">
@@ -454,7 +475,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   {weaknesses.map(({ type, multiplier }) => (
                     <span
                       key={type}
-                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${SOLID_TYPE_COLORS[type]}`}
+                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${getSolidTypeColor(type)}`}
                     >
                       <span>{getTypeLabel(type, language)}</span>
                       <strong className="bg-red-950 text-white px-1.5 py-0.2 rounded-md text-[10px]">{multiplier.toFixed(2)}x</strong>
@@ -472,7 +493,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   {resistances.map(({ type, multiplier }) => (
                     <span
                       key={type}
-                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${SOLID_TYPE_COLORS[type]}`}
+                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${getSolidTypeColor(type)}`}
                     >
                       <span>{getTypeLabel(type, language)}</span>
                       <strong className="bg-emerald-950 text-white px-1.5 py-0.2 rounded-md text-[10px]">{multiplier.toFixed(2)}x</strong>
@@ -602,7 +623,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                           {teammate.types.map((tItem) => (
                             <span
                               key={tItem}
-                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${SOLID_TYPE_COLORS[tItem]}`}
+                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${getSolidTypeColor(tItem)}`}
                             >
                               {getTypeLabel(tItem, language)}
                             </span>

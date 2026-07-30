@@ -61,12 +61,13 @@ const PVP_META_POOL: Record<PvpLeague, Array<{ name: string; fast: string; charg
   ]
 };
 
-export function getPvpAnalysis(pokemonName: string, types: PokemonType[], league: PvpLeague): PvpAnalysis {
+export function getPvpAnalysis(pokemonName: string, rawTypes: PokemonType[] = [], league: PvpLeague): PvpAnalysis {
+  const types: PokemonType[] = rawTypes && Array.isArray(rawTypes) && rawTypes.length > 0 ? rawTypes : ['normal'];
   const { weaknesses } = getPokemonWeaknessesAndResistances(types);
   const weakTypeNames = weaknesses.map((w) => w.type);
 
   // Find optimal moves from pogoDatabase
-  const normalizedSearch = pokemonName.toLowerCase().split(' ')[0];
+  const normalizedSearch = (pokemonName || '').toLowerCase().split(' ')[0];
   const dbMatch = POGO_DATABASE.find((p) => p.name.toLowerCase().includes(normalizedSearch));
 
   let optimalFast = dbMatch?.fastMoves?.[0]?.name || 'Ataque Rápido Recomendado';

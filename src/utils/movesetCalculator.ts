@@ -88,12 +88,15 @@ const MOVE_SPECS: Record<string, { duration: number; isLegacy?: boolean }> = {
 
 export function calculatePokemonMovesetAnalysis(
   pokemonName: string,
-  pokemonTypes: PokemonType[],
+  rawTypes: PokemonType[] = [],
   baseAttack: number,
   baseDefense: number,
   baseStamina: number
 ): MovesetAnalysisResult {
-  const normalizedSearch = pokemonName.toLowerCase().split(' ')[0];
+  const pokemonTypes: PokemonType[] =
+    rawTypes && Array.isArray(rawTypes) && rawTypes.length > 0 ? rawTypes : ['normal'];
+
+  const normalizedSearch = (pokemonName || '').toLowerCase().split(' ')[0];
   const dbMatch = POGO_DATABASE.find((p) => p.name.toLowerCase().includes(normalizedSearch));
 
   const rawFastMoves: PogoMove[] = dbMatch?.fastMoves || [
