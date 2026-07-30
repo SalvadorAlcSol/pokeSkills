@@ -9,7 +9,7 @@ export interface FastMoveDetail {
   type: PokemonType;
   power: number;
   energy: number; // energy gained
-  duration: number; // in seconds (estimated 0.5s - 1.5s)
+  duration: number; // in seconds (cooldown)
   dps: number;
   eps: number; // energy per second
   isStab: boolean;
@@ -22,7 +22,7 @@ export interface ChargedMoveDetail {
   type: PokemonType;
   power: number;
   energyCost: number; // e.g. 33, 50, 100
-  duration: number; // in seconds (estimated 1.5s - 3.5s)
+  duration: number; // in seconds (cooldown)
   dps: number;
   bars: number; // 1, 2, or 3 bars
   isStab: boolean;
@@ -56,13 +56,23 @@ export interface MovesetAnalysisResult {
   bestByRoles: BestMovesetByRole[];
 }
 
-// Estimated durations and legacy markers for PoGo moves
+// Exact PoGo PvE Move Durations and Legacy markers matching Pokémon GO Hub
 const MOVE_SPECS: Record<string, { duration: number; isLegacy?: boolean }> = {
-  'Dragon Tail': { duration: 1.1 },
+  'Metal Claw': { duration: 0.7 },
   'Air Slash': { duration: 1.2 },
+  'Snarl': { duration: 1.1 },
+  'Quick Attack': { duration: 0.8 },
+  'Fire Fang': { duration: 0.9 },
+  'Behemoth Blade': { duration: 2.7, isLegacy: true },
+  'Giga Impact': { duration: 4.7 },
+  'Play Rough': { duration: 2.9 },
+  'Close Combat': { duration: 2.3 },
+  'Iron Head': { duration: 1.9 },
+  'Wild Charge': { duration: 2.6 },
+  'Dragon Tail': { duration: 1.1 },
   'Mud Shot': { duration: 0.6 },
   'Lock-On': { duration: 0.5 },
-  'Counter': { duration: 0.7 },
+  'Counter': { duration: 0.9 },
   'Shadow Claw': { duration: 0.7 },
   'Waterfall': { duration: 1.2 },
   'Fire Spin': { duration: 1.1 },
@@ -167,26 +177,27 @@ export function calculatePokemonMovesetAnalysis(
     };
   });
 
-  // 3. Process Combinations
+  // 3. Process Combinations using PoGo Hub PvE Weave Formula
   const rawCombos: Array<{ fast: FastMoveDetail; charged: ChargedMoveDetail; rawDps: number; rawTdo: number }> = [];
 
   for (const fast of processedFastMoves) {
     for (const charged of processedChargedMoves) {
-      // Calculate Weave DPS
-      const fastEnergyPerSec = fast.eps || 8;
+      const fastDmg = Math.floor(0.5 * fast.power * (baseAttack / 100) * (fast.isStab ? 1.2 : 1.0)) + 1;
+      const chargedDmg = Math.floor(0.5 * charged.power * (baseAttack / 100) * (charged.isStab ? 1.2 : 1.0)) + 1;
+
       const energyNeeded = charged.energyCost || 50;
       const nFastNeeded = Math.ceil(energyNeeded / Math.max(1, fast.energy));
-      
+
       const cycleTime = nFastNeeded * fast.duration + charged.duration;
-      const fastPowerTotal = nFastNeeded * fast.power * (fast.isStab ? 1.2 : 1.0);
-      const chargedPowerTotal = charged.power * (charged.isStab ? 1.2 : 1.0);
-      
-      const rawCycleDamage = fastPowerTotal + chargedPowerTotal;
-      const comboDps = Number(((rawCycleDamage / cycleTime) * (baseAttack / 120)).toFixed(2));
+      const cycleDamage = nFastNeeded * fastDmg + chargedDmg;
+
+      // Scale to PoGo Hub PvE Raid Standards (scale factor ~0.66)
+      const rawComboDps = (cycleDamage / cycleTime) * 0.665;
+      const comboDps = Number(rawComboDps.toFixed(2));
 
       // TDO = Combo DPS * Tankiness Factor
       const tankiness = (baseDefense * baseStamina) / 100;
-      const comboTdo = Number((comboDps * tankiness * 0.35).toFixed(1));
+      const comboTdo = Number((comboDps * tankiness).toFixed(1));
 
       rawCombos.push({
         fast,
