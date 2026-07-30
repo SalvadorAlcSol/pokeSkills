@@ -1,0 +1,24 @@
+{
+  "short_name": "PokéTools",
+  "name": "PokéTools Hub | Centro de Entrenadores Pokémon GO",
+  "description": "Herramienta definitiva para optimización de rutas, calculadora de daño de raids y gestión de inventario para Pokémon GO.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/proposal-1.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#DC2626",
+  "theme_color": "#DC2626",
+  "display": "standalone",
+  "orientation": "portrait"
+}

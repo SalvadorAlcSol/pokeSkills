@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Great Ball Gradient (Blue + Red Strips) -->
+    <linearGradient id="p3-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D4ED8" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+
+    <linearGradient id="p3-red" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#DC2626" />
+    </linearGradient>
+
+    <radialGradient id="p3-pokestop" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="60%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#075985" />
+    </radialGradient>
+
+    <filter id="p3-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle Container -->
+  <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#p3-bg)" filter="url(#p3-shadow)" />
+
+  <!-- Great Ball Red Fins/Strips on top corners -->
+  <path d="M 60,60 Q 180,40 210,160 Q 100,180 60,60 Z" fill="url(#p3-red)" />
+  <path d="M 452,60 Q 332,40 302,160 Q 412,180 452,60 Z" fill="url(#p3-red)" />
+
+  <!-- Compass Route Trail Dashed Circles -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#60A5FA" stroke-width="4" stroke-dasharray="12 12" opacity="0.6" />
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#FFCC01" stroke-width="3" stroke-dasharray="8 8" opacity="0.8" />
+
+  <!-- GPS Map Pin Icon Shape framing Pokeball -->
+  <path d="M 256,70 C 160,70 90,140 90,230 C 90,340 256,460 256,460 C 256,460 422,340 422,230 C 422,140 352,70 256,70 Z" fill="#F8FAFC" opacity="0.15" stroke="#FFFFFF" stroke-width="4" />
+
+  <!-- Center Pokeball Core -->
+  <circle cx="256" cy="230" r="85" fill="#0F172A" stroke="#FFFFFF" stroke-width="6" />
+
+  <!-- PokéStop Blue Cube Center -->
+  <circle cx="256" cy="230" r="65" fill="url(#p3-pokestop)" stroke="#FFCC01" stroke-width="6" />
+
+  <!-- Rotating PokéStop Inner Ring / Compass Needle -->
+  <polygon points="256,180 270,230 256,220 242,230" fill="#FFCC01" />
+  <polygon points="256,280 270,230 256,240 242,230" fill="#FFFFFF" />
+
+  <circle cx="256" cy="230" r="12" fill="#0F172A" />
+  <circle cx="256" cy="230" r="6" fill="#FFCC01" />
+</svg>

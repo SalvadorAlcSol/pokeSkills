@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="p1-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="50%" stop-color="#DC2626" />
+      <stop offset="100%" stop-color="#991B1B" />
+    </linearGradient>
+
+    <linearGradient id="p1-band" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+
+    <linearGradient id="p1-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE066" />
+      <stop offset="50%" stop-color="#FFCC01" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <radialGradient id="p1-lens" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#E0F2FE" />
+      <stop offset="40%" stop-color="#38BDF8" />
+      <stop offset="80%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </radialGradient>
+
+    <linearGradient id="p1-gloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0" />
+    </linearGradient>
+
+    <filter id="p1-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    
+    <filter id="p1-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#38BDF8" flood-opacity="0.8" />
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#p1-bg)" filter="url(#p1-shadow)" />
+  <path d="M 16,128 C 16,66 66,16 128,16 L 384,16 C 446,16 496,66 496,128 L 496,240 L 16,240 Z" fill="url(#p1-gloss)" />
+  <path d="M 16,268 L 496,268 L 496,384 C 496,446 446,496 384,496 L 128,496 C 66,496 16,446 16,384 Z" fill="#F8FAFC" opacity="0.96" />
+
+  <rect x="16" y="228" width="480" height="56" fill="url(#p1-band)" />
+  <line x1="16" y1="228" x2="496" y2="228" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="2" />
+  <line x1="16" y1="284" x2="496" y2="284" stroke="#000000" stroke-opacity="0.4" stroke-width="3" />
+
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#FFCC01" stroke-opacity="0.25" stroke-width="3" stroke-dasharray="8 6" />
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#38BDF8" stroke-opacity="0.2" stroke-width="2" stroke-dasharray="12 8" />
+
+  <circle cx="256" cy="256" r="82" fill="url(#p1-band)" stroke="#0F172A" stroke-width="6" filter="url(#p1-shadow)" />
+  <circle cx="256" cy="256" r="68" fill="none" stroke="url(#p1-gold)" stroke-width="10" />
+  <circle cx="256" cy="256" r="54" fill="#F8FAFC" />
+  <circle cx="256" cy="256" r="38" fill="url(#p1-lens)" filter="url(#p1-glow)" />
+
+  <ellipse cx="244" cy="244" rx="12" ry="7" fill="#FFFFFF" opacity="0.8" transform="rotate(-30 244 244)" />
+  
+  <circle cx="420" cy="55" r="8" fill="#EF4444" stroke="#7F1D1D" stroke-width="2" />
+  <circle cx="442" cy="55" r="8" fill="#FFCC01" stroke="#78350F" stroke-width="2" />
+  <circle cx="464" cy="55" r="8" fill="#10B981" stroke="#064E3B" stroke-width="2" />
+</svg>
