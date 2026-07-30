@@ -19,6 +19,8 @@ import {
   Layers,
   Download,
   FolderInput,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import {
@@ -30,9 +32,20 @@ import { calculatePogoPokemonCp } from '../utils/pokemonMath';
 import { getSpanishMoveName } from '../utils/pogoMoveTranslator';
 import { exportFullAppBackup, importFullAppBackupFile } from '../utils/backupService';
 import { UserPokemon } from '../types/UserInventory';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBackToHub }) => {
-  const { inventory, removePokemon, updatePokemon, importPokemons, clearInventory } = useInventoryStore();
+  const {
+    inventory,
+    removePokemon,
+    updatePokemon,
+    importPokemons,
+    clearInventory,
+    syncFromCloud,
+    syncToCloud,
+    isSyncing,
+  } = useInventoryStore();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'mega' | 'shadow' | 'perfect'>('all');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -43,6 +56,12 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
 
   // Local state to track real-time Mega Evolution simulations per card
   const [simulatedMegas, setSimulatedMegas] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    if (isSupabaseConfigured) {
+      syncFromCloud();
+    }
+  }, []);
 
   const handleExportBackup = () => {
     exportFullAppBackup();
@@ -120,6 +139,18 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
               <Upload className="w-4 h-4 text-red-800" />
               <span>Importar Pokémon</span>
             </button>
+
+            {isSupabaseConfigured && (
+              <button
+                onClick={() => syncFromCloud()}
+                disabled={isSyncing}
+                className="px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-xs border border-blue-600 disabled:opacity-50"
+                title="Sincronizar automáticamente en la nube con Supabase"
+              >
+                <Cloud className={`w-4 h-4 ${isSyncing ? 'animate-spin text-yellow-300' : 'text-sky-300'}`} />
+                <span className="hidden lg:inline">{isSyncing ? 'Sincronizando...' : 'Nube Supabase'}</span>
+              </button>
+            )}
 
             {inventory.length > 0 && (
               <button
