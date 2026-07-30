@@ -873,57 +873,91 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
             </div>
           )}
 
-          {/* Level Slider / Input */}
+          {/* Level Slider / Steppers */}
           <div>
-            <div className="flex justify-between text-slate-800 font-extrabold mb-1">
-              <span>Nivel: {level}</span>
-              <span className="text-blue-700 font-black">PC Calculado: {computedCp}</span>
+            <div className="flex justify-between items-center text-slate-800 font-extrabold mb-1">
+              <span>Nivel: <strong className="text-purple-700 font-black">{level}</strong></span>
+              <span className="text-blue-700 font-black bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">PC Calculado: {computedCp}</span>
             </div>
-            <input
-              type="range"
-              min="1"
-              max="50"
-              step="0.5"
-              value={level}
-              onChange={(e) => setLevel(parseFloat(e.target.value))}
-              className="w-full accent-purple-600 cursor-pointer"
-            />
+            
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setLevel((prev) => Math.max(1, prev - 0.5))}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+              >
+                -
+              </button>
+              <input
+                type="range"
+                min="1"
+                max="50"
+                step="0.5"
+                value={level}
+                onChange={(e) => setLevel(parseFloat(e.target.value))}
+                className="w-full accent-purple-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+              />
+              <button
+                type="button"
+                onClick={() => setLevel((prev) => Math.min(50, prev + 0.5))}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* IV Inputs */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-amber-600 font-extrabold mb-1">Ataque IV (0-15):</label>
-              <input
-                type="number"
-                min="0"
-                max="15"
-                value={ivAtk}
-                onChange={(e) => setIvAtk(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
-                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
-              />
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold text-slate-700">Valores Individuales (IVs):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIvAtk(15);
+                  setIvDef(15);
+                  setIvHp(15);
+                }}
+                className="text-[10px] font-black text-amber-950 bg-amber-400 hover:bg-amber-300 px-2 py-0.5 rounded-md border border-amber-500 shadow-2xs"
+              >
+                🏆 100% IV (15/15/15)
+              </button>
             </div>
-            <div>
-              <label className="block text-blue-600 font-extrabold mb-1">Defensa IV (0-15):</label>
-              <input
-                type="number"
-                min="0"
-                max="15"
-                value={ivDef}
-                onChange={(e) => setIvDef(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
-                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-emerald-600 font-extrabold mb-1">Salud IV (0-15):</label>
-              <input
-                type="number"
-                min="0"
-                max="15"
-                value={ivHp}
-                onChange={(e) => setIvHp(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
-                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
-              />
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-amber-600 font-extrabold text-[10px] uppercase mb-1">Ataque IV:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="15"
+                  value={ivAtk}
+                  onChange={(e) => setIvAtk(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-blue-600 font-extrabold text-[10px] uppercase mb-1">Defensa IV:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="15"
+                  value={ivDef}
+                  onChange={(e) => setIvDef(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-emerald-600 font-extrabold text-[10px] uppercase mb-1">Salud IV:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="15"
+                  value={ivHp}
+                  onChange={(e) => setIvHp(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-center font-mono font-black text-sm"
+                />
+              </div>
             </div>
           </div>
 

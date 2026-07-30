@@ -359,10 +359,13 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
       setShowDefenderDropdown(false);
     }
   };
+  // Mobile Tab Navigation State ('attacker' | 'defender' | 'results')
+  const [mobileTab, setMobileTab] = useState<'attacker' | 'defender' | 'results'>('results');
+
   const { t, language } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-slate-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F4F5F7] text-slate-800 flex flex-col font-sans pb-12">
       {/* Pokédex Header */}
       <header className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 border-b-4 border-red-700 text-white px-4 py-3 sticky top-0 z-30 shadow-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
@@ -401,10 +404,49 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
         </div>
       </header>
 
+      {/* Mobile Sticky Tab Bar (Only visible on screens < 768px) */}
+      <div className="md:hidden sticky top-[57px] z-20 bg-white border-b-2 border-slate-200 p-2 flex items-center justify-around gap-1.5 shadow-md font-sans">
+        <button
+          onClick={() => setMobileTab('attacker')}
+          className={`flex-1 py-2 px-1 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border ${
+            mobileTab === 'attacker'
+              ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+              : 'bg-slate-100 text-slate-700 border-slate-300'
+          }`}
+        >
+          <Swords className="w-3.5 h-3.5" />
+          <span>Atacante</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab('defender')}
+          className={`flex-1 py-2 px-1 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border ${
+            mobileTab === 'defender'
+              ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+              : 'bg-slate-100 text-slate-700 border-slate-300'
+          }`}
+        >
+          <Shield className="w-3.5 h-3.5" />
+          <span>Defensor</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab('results')}
+          className={`flex-1 py-2 px-1 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border ${
+            mobileTab === 'results'
+              ? 'bg-red-600 text-white border-red-700 shadow-sm'
+              : 'bg-slate-100 text-slate-700 border-slate-300'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          <span>Daño</span>
+        </button>
+      </div>
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col gap-6 font-sans">
-        {/* Results Summary Card */}
-        <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-md flex flex-col gap-4">
+      <main className="max-w-7xl mx-auto w-full px-4 py-4 sm:py-6 flex-1 flex flex-col gap-6 font-sans">
+        {/* Results Summary Card (Shown if mobileTab === 'results' on mobile, or always on desktop) */}
+        <div className={`bg-white border-2 border-slate-200 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col gap-4 ${mobileTab === 'results' ? 'block' : 'hidden md:block'}`}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
             <div>
               <span className="text-sm font-extrabold tracking-wider text-slate-900 flex items-center gap-2">
@@ -415,6 +457,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
                 Defensor: {defenderStats.finalHp} HP Max • Nvl. {defenderLevel} ({defenderIvAtk}/{defenderIvDef}/{defenderIvHp})
               </span>
             </div>
+
 
             <div className="text-xs text-blue-900 font-extrabold bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl">
               Atacante Stats: {Math.round(attackerStats.finalAttack)} Atk (CPM: {attackerStats.cpm.toFixed(4)})
@@ -524,7 +567,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
         {/* Configuration Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
           {/* ATTACKER CONFIG PANEL */}
-          <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-md flex flex-col gap-4">
+          <div className={`bg-white border-2 border-slate-200 rounded-3xl p-4 sm:p-5 shadow-md flex-col gap-4 ${mobileTab === 'attacker' ? 'flex' : 'hidden md:flex'}`}>
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-2">
                 <Swords className="w-4 h-4 text-blue-600" />
@@ -684,9 +727,9 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
                   }}
                   className="w-20 h-20 object-contain drop-shadow-md shrink-0"
                 />
-                <div className="space-y-1.5 flex-1">
+                <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="font-extrabold text-base text-slate-900 flex items-center justify-between">
-                    <span>{activeAttacker.name}</span>
+                    <span className="truncate">{activeAttacker.name}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -792,62 +835,116 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
             {/* Level (1-50) & IVs (0-15) Controls */}
             <div className="space-y-3 pt-2 border-t border-slate-200">
               <div>
-                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700 mb-1">
                   <span>Nivel (PoGo 1 - 50):</span>
-                  <span className="font-extrabold text-blue-700">Nvl. {attackerLevel}</span>
+                  <span className="font-extrabold text-blue-700 text-sm bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                    Nvl. {attackerLevel}
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  step="0.5"
-                  value={attackerLevel}
-                  onChange={(e) => setAttackerLevel(Number(e.target.value))}
-                  className="w-full accent-blue-600 cursor-pointer"
-                />
+                
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAttackerLevel((prev) => Math.max(1, prev - 0.5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    step="0.5"
+                    value={attackerLevel}
+                    onChange={(e) => setAttackerLevel(Number(e.target.value))}
+                    className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAttackerLevel((prev) => Math.min(50, prev + 0.5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-500 shrink-0">Acceso Rápido:</span>
+                  {[30, 35, 40, 50].map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setAttackerLevel(lvl)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                        attackerLevel === lvl
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      Nv.{lvl}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* IVs 0-15 */}
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV Ataque (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={attackerIvAtk}
-                    onChange={(e) => setAttackerIvAtk(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-700">Valores Individuales (IVs):</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttackerIvAtk(15);
+                      setAttackerIvDef(15);
+                      setAttackerIvHp(15);
+                    }}
+                    className="text-[10px] font-black text-amber-950 bg-amber-400 hover:bg-amber-300 px-2 py-0.5 rounded-md border border-amber-500 shadow-2xs"
+                  >
+                    🏆 100% IV (15/15/15)
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV Defensa (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={attackerIvDef}
-                    onChange={(e) => setAttackerIvDef(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV HP (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={attackerIvHp}
-                    onChange={(e) => setAttackerIvHp(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Ataque (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={attackerIvAtk}
+                      onChange={(e) => setAttackerIvAtk(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Defensa (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={attackerIvDef}
+                      onChange={(e) => setAttackerIvDef(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Salud (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={attackerIvHp}
+                      onChange={(e) => setAttackerIvHp(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* DEFENDER CONFIG PANEL */}
-          <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-md flex flex-col gap-4">
+          <div className={`bg-white border-2 border-slate-200 rounded-3xl p-4 sm:p-5 shadow-md flex-col gap-4 ${mobileTab === 'defender' ? 'flex' : 'hidden md:flex'}`}>
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-purple-600" />
@@ -965,7 +1062,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
                   />
                   <span className="flex items-center gap-1 font-extrabold">
                     <Sparkle className="w-4 h-4 text-purple-600 fill-purple-600" />
-                    {t.enableSpecialForm || 'Activar Forma Especial (Mega, Fusionado, Transformado)'}
+                    {t.enableSpecialForm || 'Activar Forma Especial'}
                   </span>
                 </label>
 
@@ -1007,9 +1104,9 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
                   }}
                   className="w-20 h-20 object-contain drop-shadow-md shrink-0"
                 />
-                <div className="space-y-1.5 flex-1">
+                <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="font-extrabold text-base text-slate-900 flex items-center justify-between">
-                    <span>{activeDefender.name}</span>
+                    <span className="truncate">{activeDefender.name}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -1038,55 +1135,109 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
             {/* Level (1-50) & IVs (0-15) Controls */}
             <div className="space-y-3 pt-2 border-t border-slate-200">
               <div>
-                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700 mb-1">
                   <span>{t.defenderLevelLabel}</span>
-                  <span className="font-extrabold text-purple-700">Nvl. {defenderLevel}</span>
+                  <span className="font-extrabold text-purple-700 text-sm bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                    Nvl. {defenderLevel}
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  step="0.5"
-                  value={defenderLevel}
-                  onChange={(e) => setDefenderLevel(Number(e.target.value))}
-                  className="w-full accent-purple-600 cursor-pointer"
-                />
+
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setDefenderLevel((prev) => Math.max(1, prev - 0.5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    step="0.5"
+                    value={defenderLevel}
+                    onChange={(e) => setDefenderLevel(Number(e.target.value))}
+                    className="w-full accent-purple-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setDefenderLevel((prev) => Math.min(50, prev + 0.5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-500 shrink-0">Acceso Rápido:</span>
+                  {[30, 35, 40, 50].map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setDefenderLevel(lvl)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                        defenderLevel === lvl
+                          ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      Nv.{lvl}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* IVs 0-15 */}
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV Ataque (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={defenderIvAtk}
-                    onChange={(e) => setDefenderIvAtk(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-700">Valores Individuales (IVs):</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDefenderIvAtk(15);
+                      setDefenderIvDef(15);
+                      setDefenderIvHp(15);
+                    }}
+                    className="text-[10px] font-black text-amber-950 bg-amber-400 hover:bg-amber-300 px-2 py-0.5 rounded-md border border-amber-500 shadow-2xs"
+                  >
+                    🏆 100% IV (15/15/15)
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV Defensa (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={defenderIvDef}
-                    onChange={(e) => setDefenderIvDef(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold text-[11px] mb-1">IV HP (0-15):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="15"
-                    value={defenderIvHp}
-                    onChange={(e) => setDefenderIvHp(Math.min(15, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-slate-900 font-extrabold text-center shadow-inner"
-                  />
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Ataque (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={defenderIvAtk}
+                      onChange={(e) => setDefenderIvAtk(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Defensa (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={defenderIvDef}
+                      onChange={(e) => setDefenderIvDef(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-bold text-[10px] uppercase mb-1">Salud (0-15):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="15"
+                      value={defenderIvHp}
+                      onChange={(e) => setDefenderIvHp(Math.min(15, Math.max(0, Number(e.target.value))))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-slate-900 font-extrabold text-center text-sm shadow-inner"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -133,14 +133,14 @@ export const TypeFilterBar: React.FC<TypeFilterBarProps> = ({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 pt-0.5 sm:flex-wrap touch-pan-x">
         <button
           type="button"
           onClick={onClearTypes}
-          className={`px-2 py-0.5 rounded text-[10px] uppercase transition-all border ${
+          className={`px-2.5 py-1 rounded-lg text-[10px] uppercase shrink-0 transition-all border ${
             selectedTypes.length === 0
-              ? 'bg-red-600 text-white font-extrabold border-red-700 shadow-sm'
-              : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 font-bold'
+              ? 'bg-red-600 text-white font-black border-red-700 shadow-xs'
+              : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 font-extrabold'
           }`}
         >
           {t.allTypes}
@@ -155,7 +155,7 @@ export const TypeFilterBar: React.FC<TypeFilterBarProps> = ({
               key={type}
               type="button"
               onClick={() => onToggleType(type)}
-              className={`px-2 py-0.5 rounded text-[10px] uppercase transition-all border ${
+              className={`px-2.5 py-1 rounded-lg text-[10px] uppercase shrink-0 transition-all border ${
                 isSelected ? styles.active : styles.inactive
               }`}
             >
@@ -164,6 +164,7 @@ export const TypeFilterBar: React.FC<TypeFilterBarProps> = ({
           );
         })}
       </div>
+
     </div>
   );
 };

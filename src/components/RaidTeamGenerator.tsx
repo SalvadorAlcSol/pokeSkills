@@ -1053,22 +1053,52 @@ export const RaidTeamGenerator: React.FC<RaidTeamGeneratorProps> = ({ onBackToHu
               <div>
                 <div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
                   <span>{t.attackerLevelLabel}</span>
-                  <span className="font-extrabold text-red-600">Nvl. {attackerLevel}</span>
+                  <span className="font-extrabold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                    Nvl. {attackerLevel}
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="50"
-                  step="5"
-                  value={attackerLevel}
-                  onChange={(e) => setAttackerLevel(Number(e.target.value))}
-                  className="w-full accent-red-600 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1">
-                  <span>Nvl. 20</span>
-                  <span>Nvl. 30</span>
-                  <span>Nvl. 40</span>
-                  <span>Nvl. 50</span>
+                
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAttackerLevel((prev) => Math.max(20, prev - 5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="range"
+                    min="20"
+                    max="50"
+                    step="5"
+                    value={attackerLevel}
+                    onChange={(e) => setAttackerLevel(Number(e.target.value))}
+                    className="w-full accent-red-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAttackerLevel((prev) => Math.min(50, prev + 5))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-base flex items-center justify-center shrink-0 border border-slate-300 active:scale-95 shadow-xs"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="flex justify-between text-[10px] text-slate-500 font-bold mt-1.5 px-1">
+                  {[20, 30, 40, 50].map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setAttackerLevel(lvl)}
+                      className={`px-2 py-0.5 rounded-md border transition-all ${
+                        attackerLevel === lvl
+                          ? 'bg-red-600 text-white font-black border-red-700'
+                          : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      Nv.{lvl}
+                    </button>
+                  ))}
                 </div>
               </div>
 
