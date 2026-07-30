@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { PokeGenieImporter } from './PokeGenieImporter';
 import { VideoScanner } from './VideoScanner';
+import { PokemonDetailModal } from './PokemonDetailModal';
 import {
   Trash2,
   Search,
@@ -24,6 +25,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Info,
 } from 'lucide-react';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import {
@@ -58,6 +60,9 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
 
   // Track editing pokemon
   const [editingPokemon, setEditingPokemon] = useState<UserPokemon | null>(null);
+
+  // Track detail view pokemon (opens exclusive screen with strengths, PvP recommendations & lore)
+  const [selectedDetailPokemon, setSelectedDetailPokemon] = useState<UserPokemon | null>(null);
 
   // Local state to track real-time Mega Evolution simulations per card
   const [simulatedMegas, setSimulatedMegas] = useState<Record<string, string>>({});
@@ -414,6 +419,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
                 onToggleMegaSim={(megaId) => toggleMegaSimulation(pokemon.id, megaId)}
                 onEdit={() => setEditingPokemon(pokemon)}
                 onRemove={() => removePokemon(pokemon.id)}
+                onSelect={() => setSelectedDetailPokemon(pokemon)}
                 onUpdate={(updates) => updatePokemon(pokemon.id, updates)}
               />
             ))}
@@ -438,6 +444,19 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
         )}
       </main>
 
+      {/* Modal for Exclusive Pokémon Detail (Strengths, Weaknesses, PvP Teams, Lore) */}
+      {selectedDetailPokemon && (
+        <PokemonDetailModal
+          pokemon={selectedDetailPokemon}
+          onClose={() => setSelectedDetailPokemon(null)}
+          onEdit={() => {
+            const target = selectedDetailPokemon;
+            setSelectedDetailPokemon(null);
+            setEditingPokemon(target);
+          }}
+        />
+      )}
+
       {/* Modal for Editing a Pokémon */}
       {editingPokemon && (
         <EditPokemonModal
@@ -453,46 +472,46 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
           <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative custom-scrollbar">
             <button
               onClick={() => setShowImportModal(false)}
-              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <Upload className="w-6 h-6 text-purple-600" />
-                Importar a Mi Caja Pokémon
-              </h2>
-              <p className="text-xs text-slate-600 font-medium mt-1">
-                Escanea un video de PGSharp/Pokémon GO o carga la información formateada.
-              </p>
-            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+              📥 Importar Pokémon a tu Caja
+            </h3>
 
-            {/* Sub-tabs inside Modal */}
-            <div className="flex rounded-2xl overflow-hidden border border-slate-200 p-1 bg-slate-100 mb-6">
+            {/* Import Tab Switcher */}
+            <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl mb-6 border border-slate-200">
               <button
                 onClick={() => setImportTab('video')}
-                className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                   importTab === 'video'
-                    ? 'bg-blue-600 text-white shadow-sm'
+                    ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Video className="w-4 h-4" /> Escáner de Video (IA)
+                <Video className="w-4 h-4" />
+                Escáner de Video de Pantalla
               </button>
               <button
                 onClick={() => setImportTab('csv')}
-                className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                   importTab === 'csv'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <FileSpreadsheet className="w-4 h-4" /> CSV / Texto Pegado
+                <FileSpreadsheet className="w-4 h-4" />
+                Importar CSV PokeGenie / CalcyIV
               </button>
             </div>
 
-            {importTab === 'video' ? <VideoScanner /> : <PokeGenieImporter />}
+            {importTab === 'video' ? (
+              <VideoScanner onComplete={() => setShowImportModal(false)} />
+            ) : (
+              <PokeGenieImporter onComplete={() => setShowImportModal(false)} />
+            )}
           </div>
         </div>
       )}
@@ -506,6 +525,7 @@ interface PokemonInventoryCardProps {
   onToggleMegaSim: (megaFormId: string) => void;
   onEdit: () => void;
   onRemove: () => void;
+  onSelect: () => void;
   onUpdate: (updates: Partial<UserPokemon>) => void;
 }
 
@@ -515,6 +535,7 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
   onToggleMegaSim,
   onEdit,
   onRemove,
+  onSelect,
   onUpdate,
 }) => {
   const ivPct = Math.round(((pokemon.ivAtk + pokemon.ivDef + pokemon.ivHp) / 45) * 100);
@@ -587,8 +608,15 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
           : 'border-slate-200 hover:border-purple-500'
       }`}
     >
-      {/* Action Buttons (Edit & Delete) */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-10">
+      {/* Action Buttons (Info, Edit & Delete) */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all z-10">
+        <button
+          onClick={onSelect}
+          className="p-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded-xl transition-all shadow-sm"
+          title="Ver Detalle Exclusivo (Fortalezas, PvP e Historia)"
+        >
+          <Info className="w-4 h-4" />
+        </button>
         <button
           onClick={onEdit}
           className="p-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all shadow-sm"
@@ -606,7 +634,7 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
       </div>
 
       {/* Top Banner Badges */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 mb-3 flex-wrap cursor-pointer" onClick={onSelect}>
         <span
           className={`text-xs px-2.5 py-0.5 rounded-full font-black shadow-xs ${
             activeMegaForm
@@ -647,8 +675,8 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
         )}
       </div>
 
-      {/* Pokemon Image & Name Header */}
-      <div className="flex items-center gap-4 mb-4">
+      {/* Pokemon Image & Name Header (Clickable) */}
+      <div className="flex items-center gap-4 mb-4 cursor-pointer" onClick={onSelect}>
         <div
           className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
             activeMegaForm
@@ -788,6 +816,15 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
             </button>
           </div>
         )}
+
+        {/* Full Details Button */}
+        <button
+          onClick={onSelect}
+          className="w-full py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-2xs mt-2"
+        >
+          <Info className="w-3.5 h-3.5 text-purple-600" />
+          <span>Ver Ficha, Equipos PvP & Lore</span>
+        </button>
       </div>
     </div>
   );
