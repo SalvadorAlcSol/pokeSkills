@@ -2,6 +2,8 @@ import { PokemonType } from '../data/pokemonData';
 import { POGO_DATABASE, PogoMove } from '../data/pogoDatabase';
 import { getSpanishMoveName } from './pogoMoveTranslator';
 
+export type AnalysisMode = 'pve' | 'pvp';
+
 export interface FastMoveDetail {
   id: string;
   name: string;
@@ -37,6 +39,7 @@ export interface MovesetCombo {
   tdo: number;
   score: number; // % relative to rank #1
   roleCategory: string; // e.g. "Dragon Attacker", "Flying Attacker"
+  pvpNote?: string;
 }
 
 export interface BestMovesetByRole {
@@ -103,7 +106,8 @@ export function calculatePokemonMovesetAnalysis(
   baseDefense: number,
   baseStamina: number,
   customFastMoves?: PogoMove[],
-  customChargedMoves?: PogoMove[]
+  customChargedMoves?: PogoMove[],
+  mode: AnalysisMode = 'pve'
 ): MovesetAnalysisResult {
   const pokemonTypes: PokemonType[] =
     rawTypes && Array.isArray(rawTypes) && rawTypes.length > 0 ? rawTypes : ['normal'];
@@ -177,45 +181,65 @@ export function calculatePokemonMovesetAnalysis(
     };
   });
 
-  // 3. Process Combinations using PoGo Hub PvE Weave Formula
-  const rawCombos: Array<{ fast: FastMoveDetail; charged: ChargedMoveDetail; rawDps: number; rawTdo: number }> = [];
+  // 3. Process Combinations (PvE vs PvP mode)
+  const rawCombos: Array<{ fast: FastMoveDetail; charged: ChargedMoveDetail; rawDps: number; rawTdo: number; pvpNote?: string }> = [];
 
   for (const fast of processedFastMoves) {
     for (const charged of processedChargedMoves) {
-      const fastDmg = Math.floor(0.5 * fast.power * (baseAttack / 100) * (fast.isStab ? 1.2 : 1.0)) + 1;
-      const chargedDmg = Math.floor(0.5 * charged.power * (baseAttack / 100) * (charged.isStab ? 1.2 : 1.0)) + 1;
+      if (mode === 'pve') {
+        // PoGo Hub PvE Weave Formula
+        const fastDmg = Math.floor(0.5 * fast.power * (baseAttack / 100) * (fast.isStab ? 1.2 : 1.0)) + 1;
+        const chargedDmg = Math.floor(0.5 * charged.power * (baseAttack / 100) * (charged.isStab ? 1.2 : 1.0)) + 1;
 
-      const energyNeeded = charged.energyCost || 50;
-      const nFastNeeded = Math.ceil(energyNeeded / Math.max(1, fast.energy));
+        const energyNeeded = charged.energyCost || 50;
+        const nFastNeeded = Math.ceil(energyNeeded / Math.max(1, fast.energy));
 
-      const cycleTime = nFastNeeded * fast.duration + charged.duration;
-      const cycleDamage = nFastNeeded * fastDmg + chargedDmg;
+        const cycleTime = nFastNeeded * fast.duration + charged.duration;
+        const cycleDamage = nFastNeeded * fastDmg + chargedDmg;
 
-      // Scale to PoGo Hub PvE Raid Standards (scale factor ~0.66)
-      const rawComboDps = (cycleDamage / cycleTime) * 0.665;
-      const comboDps = Number(rawComboDps.toFixed(2));
+        const rawComboDps = (cycleDamage / cycleTime) * 0.665;
+        const comboDps = Number(rawComboDps.toFixed(2));
 
-      // TDO = Combo DPS * Tankiness Factor
-      const tankiness = (baseDefense * baseStamina) / 100;
-      const comboTdo = Number((comboDps * tankiness).toFixed(1));
+        const tankiness = (baseDefense * baseStamina) / 100;
+        const comboTdo = Number((comboDps * tankiness).toFixed(1));
 
-      rawCombos.push({
-        fast,
-        charged,
-        rawDps: comboDps,
-        rawTdo: comboTdo
-      });
+        rawCombos.push({
+          fast,
+          charged,
+          rawDps: comboDps,
+          rawTdo: comboTdo
+        });
+      } else {
+        // PvP Mode Rating: Prioritizes Energy Generation (EPS) + Charged Move Efficiency
+        const pvpFastRating = fast.eps * 2.2 + fast.dps * 0.8;
+        const pvpChargedRating = (charged.power * (charged.isStab ? 1.2 : 1.0)) / Math.max(1, charged.energyCost);
+        const pvpScore = Number((pvpFastRating * 1.5 + pvpChargedRating * 12.0).toFixed(2));
+
+        const pvpTdo = Number((pvpScore * (baseDefense * baseStamina / 120)).toFixed(1));
+
+        let pvpNote = 'Excelente presión de escudos en Liga PvP';
+        if (fast.eps >= 11) pvpNote = 'Generación ultra-rápida de energía (Generador principal)';
+        else if (charged.power >= 120) pvpNote = 'Bomba rematadora de alto impacto sin escudos';
+
+        rawCombos.push({
+          fast,
+          charged,
+          rawDps: pvpScore,
+          rawTdo: pvpTdo,
+          pvpNote
+        });
+      }
     }
   }
 
-  // Sort combos descending by DPS
+  // Sort combos descending by DPS / PvP Score
   rawCombos.sort((a, b) => b.rawDps - a.rawDps || b.rawTdo - a.rawTdo);
 
   const topDps = rawCombos.length > 0 ? rawCombos[0].rawDps : 1;
 
   const combos: MovesetCombo[] = rawCombos.map((item, index) => {
     const score = Number(((item.rawDps / topDps) * 100).toFixed(2));
-    const roleCategory = `${item.charged.type.toUpperCase()} Attacker`;
+    const roleCategory = mode === 'pve' ? `${item.charged.type.toUpperCase()} Raid Attacker` : `PvP Combo (${item.charged.type.toUpperCase()})`;
 
     return {
       rank: index + 1,
@@ -224,7 +248,8 @@ export function calculatePokemonMovesetAnalysis(
       dps: item.rawDps,
       tdo: item.rawTdo,
       score,
-      roleCategory
+      roleCategory,
+      pvpNote: item.pvpNote
     };
   });
 
@@ -236,7 +261,7 @@ export function calculatePokemonMovesetAnalysis(
     const cType = combo.chargedMove.type;
     if (!processedRoleTypes.has(cType)) {
       processedRoleTypes.add(cType);
-      const roleName = `Mejor Moveset Tipo ${getSpanishMoveName(cType) || cType.toUpperCase()}`;
+      const roleName = mode === 'pve' ? `Mejor Moveset Tipo ${getSpanishMoveName(cType) || cType.toUpperCase()}` : `Mejor Combo PvP (${getSpanishMoveName(cType) || cType.toUpperCase()})`;
 
       bestByRoles.push({
         roleName,
