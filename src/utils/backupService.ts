@@ -7,6 +7,8 @@
  * - Language & Preferences
  */
 
+import { useInventoryStore } from '../store/inventoryStore';
+
 export interface FullAppBackup {
   version: string;
   timestamp: number;
@@ -67,21 +69,18 @@ export function importFullAppBackupFile(
   onSuccess?: (stats: { pokemons: number; hasRoute: boolean }) => void
 ): void {
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.onload = async (event) => {
     try {
       const content = event.target?.result as string;
       const parsed = JSON.parse(content);
 
-      let importedPokemons = 0;
+      let importedPokemonsList: any[] = [];
       let hasRoute = false;
 
       // Handle Full Backup Format
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         if (parsed.inventory && Array.isArray(parsed.inventory)) {
-          const invStoreKey = 'pokeroutes-inventory-storage';
-          const invData = { state: { inventory: parsed.inventory }, version: 0 };
-          localStorage.setItem(invStoreKey, JSON.stringify(invData));
-          importedPokemons = parsed.inventory.length;
+          importedPokemonsList = parsed.inventory;
         }
 
         if (parsed.routeState) {
@@ -105,18 +104,27 @@ export function importFullAppBackupFile(
           localStorage.setItem('pokeroutes_lang', parsed.language);
         }
       } else if (Array.isArray(parsed)) {
-        // Direct Array Backup format
-        const invStoreKey = 'pokeroutes-inventory-storage';
-        const invData = { state: { inventory: parsed }, version: 0 };
-        localStorage.setItem(invStoreKey, JSON.stringify(invData));
-        importedPokemons = parsed.length;
+        importedPokemonsList = parsed;
       }
 
-      // Reload page to reflect restored state across all components
+      if (importedPokemonsList.length > 0) {
+        // Save to LocalStorage Zustand format
+        const invStoreKey = 'pokeroutes-inventory-storage';
+        const invData = { state: { inventory: importedPokemonsList }, version: 0 };
+        localStorage.setItem(invStoreKey, JSON.stringify(invData));
+
+        // Update active Zustand store state in memory
+        useInventoryStore.setState({ inventory: importedPokemonsList });
+
+        // Auto sync all imported items up to Supabase Cloud!
+        await useInventoryStore.getState().syncToCloud();
+      }
+
+      // Reload or notify success
       if (onSuccess) {
-        onSuccess({ pokemons: importedPokemons, hasRoute });
+        onSuccess({ pokemons: importedPokemonsList.length, hasRoute });
       } else {
-        alert(`¡Copia de seguridad restaurada con éxito!\n- ${importedPokemons} Pokémon recuperados.\n- Rutas y progreso sincronizados.`);
+        alert(`¡Copia de seguridad restaurada con éxito!\n- ${importedPokemonsList.length} Pokémon recuperados y sincronizados en la nube.\n- Rutas y progreso restaurados.`);
         window.location.reload();
       }
     } catch (err) {

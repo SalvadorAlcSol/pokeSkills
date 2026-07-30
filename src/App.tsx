@@ -5,6 +5,8 @@ import { RouteTracker } from './components/RouteTracker';
 import { DamageCalculator } from './components/DamageCalculator';
 import { RaidTeamGenerator } from './components/RaidTeamGenerator';
 import { InventoryManager } from './components/InventoryManager';
+import { useInventoryStore } from './store/inventoryStore';
+import { isSupabaseConfigured } from './services/supabaseClient';
 
 type ScreenType = 'hub' | 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory';
 
@@ -20,6 +22,12 @@ function MainApp() {
   useEffect(() => {
     localStorage.setItem('poketools_current_screen', currentScreen);
   }, [currentScreen]);
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      useInventoryStore.getState().syncFromCloud();
+    }
+  }, []);
 
   if (currentScreen === 'route-tracker') {
     return <RouteTracker onBackToHub={() => setCurrentScreen('hub')} />;
@@ -39,7 +47,6 @@ function MainApp() {
 
   return <HubMenu onSelectTool={(tool) => setCurrentScreen(tool)} />;
 }
-
 
 export default function App() {
   return (

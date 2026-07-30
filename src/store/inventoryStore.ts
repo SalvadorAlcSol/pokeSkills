@@ -118,6 +118,13 @@ export const useInventoryStore = create<InventoryState>()(
           if (!error && data && data.length > 0) {
             const cloudItems: UserPokemon[] = data.map((row: any) => row.data);
             set({ inventory: cloudItems });
+          } else if (!error && (!data || data.length === 0)) {
+            // Cloud is empty. If local state has items, push them to cloud!
+            const currentItems = get().inventory;
+            if (currentItems.length > 0) {
+              const rows = currentItems.map(p => ({ id: p.id, data: p, updated_at: new Date() }));
+              await supabase.from('pokemon_inventory').upsert(rows);
+            }
           }
         } catch (e) {
           console.warn('Error fetching cloud inventory:', e);
