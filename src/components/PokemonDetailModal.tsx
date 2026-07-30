@@ -1,12 +1,31 @@
 import React, { useState } from 'react';
-import { X, Swords, Shield, Sparkles, BookOpen, Trophy, Zap, Heart, Flame, Layers, Award, Edit3 } from 'lucide-react';
+import {
+  X,
+  Swords,
+  Shield,
+  Sparkles,
+  BookOpen,
+  Trophy,
+  Zap,
+  Heart,
+  Flame,
+  Award,
+  Edit3,
+  BarChart3,
+  Info,
+  CheckCircle2,
+  Star,
+  Layers
+} from 'lucide-react';
 import { UserPokemon } from '../types/UserInventory';
-import { getPokemonWeaknessesAndResistances } from '../utils/pokemonMath';
+import { getPokemonWeaknessesAndResistances, calculatePogoPokemonCp } from '../utils/pokemonMath';
 import { getTypeLabel } from '../utils/pogoTypeTranslator';
 import { useLanguage } from '../context/LanguageContext';
 import { getPokemonLore } from '../data/pokemonLoreData';
 import { getPvpAnalysis, PvpLeague } from '../utils/pvpRecommender';
+import { calculatePokemonMovesetAnalysis } from '../utils/movesetCalculator';
 import { PokemonType } from '../data/pokemonData';
+import { POGO_DATABASE } from '../data/pogoDatabase';
 
 interface PokemonDetailModalProps {
   pokemon: UserPokemon;
@@ -37,8 +56,26 @@ const SOLID_TYPE_COLORS: Record<PokemonType, string> = {
 
 export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon, onClose, onEdit }) => {
   const { language } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'pvp' | 'weakness' | 'lore'>('pvp');
+  const [activeTab, setActiveTab] = useState<'moves' | 'stats' | 'pvp' | 'lore'>('moves');
   const [selectedLeague, setSelectedLeague] = useState<PvpLeague>('great');
+
+  // Database base stats lookup
+  const normalizedSearch = pokemon.name.toLowerCase().split(' ')[0];
+  const dbMatch = POGO_DATABASE.find((p) => p.name.toLowerCase().includes(normalizedSearch));
+
+  const baseAtk = dbMatch?.baseAttack || 200;
+  const baseDef = dbMatch?.baseDefense || 180;
+  const baseSta = dbMatch?.baseStamina || 180;
+  const pokedexNo = dbMatch?.id || parseInt(pokemon.speciesId, 10) || 0;
+
+  // Movesets, DPS & EPS Analysis
+  const movesetAnalysis = calculatePokemonMovesetAnalysis(
+    pokemon.name,
+    pokemon.types,
+    baseAtk,
+    baseDef,
+    baseSta
+  );
 
   // Type effectiveness analysis
   const { weaknesses, resistances } = getPokemonWeaknessesAndResistances(pokemon.types);
@@ -52,11 +89,19 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
   // Calculate IV Percentage
   const ivPercent = Math.round(((pokemon.ivAtk + pokemon.ivDef + pokemon.ivHp) / 45) * 100);
 
+  // Calculate Max CPs across key levels
+  const cpLvl15 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 15, 15, 15, 15);
+  const cpLvl20 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 20, 15, 15, 15);
+  const cpLvl25 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 25, 15, 15, 15);
+  const cpLvl40 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 40, 15, 15, 15);
+  const cpLvl50 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 50, 15, 15, 15);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl relative custom-scrollbar max-h-[92vh] overflow-y-auto text-slate-900 flex flex-col gap-5">
-        {/* Header Bar */}
-        <div className="flex items-start justify-between border-b border-slate-200 pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn font-sans">
+      <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl relative custom-scrollbar max-h-[94vh] overflow-y-auto text-slate-900 flex flex-col gap-4">
+        
+        {/* Header Section */}
+        <div className="flex items-start justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-100 p-2 border-2 border-slate-300 shadow-md shrink-0 flex items-center justify-center relative">
               <img
@@ -69,11 +114,6 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                   💀 OSCURO
                 </span>
               )}
-              {pokemon.isPurified && (
-                <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-blue-700 shadow-xs">
-                  ✨ PURIFICADO
-                </span>
-              )}
             </div>
 
             <div>
@@ -81,6 +121,9 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   {pokemon.name}
                 </h2>
+                <span className="text-xs font-black text-slate-600 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-md">
+                  #{pokedexNo}
+                </span>
                 <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-full">
                   Nvl. {pokemon.level}
                 </span>
@@ -105,7 +148,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {onEdit && (
               <button
                 onClick={onEdit}
@@ -125,46 +168,323 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-300 text-xs font-black">
+        {/* 4 Top Tabs Header Bar */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-300 text-xs font-black overflow-x-auto touch-pan-x custom-scrollbar">
+          <button
+            onClick={() => setActiveTab('moves')}
+            className={`flex-1 min-w-[120px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+              activeTab === 'moves'
+                ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Swords className="w-3.5 h-3.5" />
+            <span>⚔️ Movimientos & Combos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+              activeTab === 'stats'
+                ? 'bg-red-600 text-white border-red-700 shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>📊 Stats & Max CP</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('pvp')}
-            className={`flex-1 py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
+            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
               activeTab === 'pvp'
                 ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
-            <span>⚔️ Equipos PvP</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('weakness')}
-            className={`flex-1 py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
-              activeTab === 'weakness'
-                ? 'bg-red-600 text-white border-red-700 shadow-sm'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>🛡️ Fortalezas / Debilidades</span>
+            <span>🛡️ Equipos PvP</span>
           </button>
 
           <button
             onClick={() => setActiveTab('lore')}
-            className={`flex-1 py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
+            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
               activeTab === 'lore'
-                ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>📜 Historia & Lore</span>
+            <span>📜 Pokédex & Lore</span>
           </button>
         </div>
 
-        {/* TAB CONTENT 1: PVP TEAM RECOMMENDER & LEAGUE SELECTOR */}
+        {/* TAB CONTENT 1: MOVESETS, DPS, EPS & COMBOS RANKING */}
+        {activeTab === 'moves' && (
+          <div className="space-y-4">
+            {/* Top Featured Best Movesets by Elemental Role */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                Mejores Combinaciones de Movimientos por Rol (Best Movesets):
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {movesetAnalysis.bestByRoles.map((role) => (
+                  <div
+                    key={role.roleName}
+                    className="bg-blue-50/80 border-2 border-blue-200 rounded-2xl p-3 shadow-xs space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-blue-900 bg-blue-100 border border-blue-300 px-2.5 py-0.5 rounded-full">
+                        {role.roleName}
+                      </span>
+                      <span className="text-xs font-black text-white bg-blue-600 px-2 py-0.5 rounded-md shadow-2xs">
+                        {role.tier}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-blue-200 space-y-1 text-xs">
+                      <div className="font-extrabold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                        <span className="text-blue-600">⚡ {role.fastMove.spanishName}</span>
+                        <span>+</span>
+                        <span className="text-purple-600">💥 {role.chargedMove.spanishName} {role.chargedMove.isLegacy ? '*' : ''}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] font-black pt-1 border-t border-slate-100">
+                        <span className="text-emerald-700">⚡ {role.dps} DPS</span>
+                        <span className="text-slate-600">🛡️ {role.tdo} TDO</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Moveset Combinations Ranking Table (DPS / TDO / Score) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
+                  <Swords className="w-4 h-4 text-red-600" />
+                  Tabla de Ranking de Combinaciones (Moves Analysis):
+                </h4>
+                <span className="text-[10px] font-bold text-slate-500">
+                  * Movimiento de Evento / Legado
+                </span>
+              </div>
+
+              <div className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase text-slate-700">
+                      <tr>
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Ataque Rápido</th>
+                        <th className="py-2.5 px-3">Ataque Cargado</th>
+                        <th className="py-2.5 px-3 text-center">DPS</th>
+                        <th className="py-2.5 px-3 text-center">TDO</th>
+                        <th className="py-2.5 px-3 text-right">Eficiencia</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {movesetAnalysis.combos.map((combo) => (
+                        <tr
+                          key={`${combo.rank}-${combo.fastMove.id}-${combo.chargedMove.id}`}
+                          className={`hover:bg-slate-50 transition-colors ${
+                            combo.rank === 1 ? 'bg-amber-50/60 font-bold' : ''
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-black text-slate-500">
+                            {combo.rank === 1 ? '🥇 #1' : `#${combo.rank}`}
+                          </td>
+                          <td className="py-2.5 px-3 font-extrabold text-slate-900">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${SOLID_TYPE_COLORS[combo.fastMove.type]}`}>
+                                {getTypeLabel(combo.fastMove.type, language)}
+                              </span>
+                              <span>{combo.fastMove.spanishName}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-extrabold text-slate-900">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded ${SOLID_TYPE_COLORS[combo.chargedMove.type]}`}>
+                                {getTypeLabel(combo.chargedMove.type, language)}
+                              </span>
+                              <span>
+                                {combo.chargedMove.spanishName}
+                                {combo.chargedMove.isLegacy ? ' *' : ''}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-black text-center text-emerald-700 bg-emerald-50/50">
+                            {combo.dps}
+                          </td>
+                          <td className="py-2.5 px-3 font-extrabold text-center text-slate-700">
+                            {combo.tdo}
+                          </td>
+                          <td className="py-2.5 px-3 font-black text-right text-purple-700">
+                            {combo.score}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Fast & Charged Move Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {/* Fast Attacks List */}
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 space-y-2">
+                <h5 className="text-xs font-black uppercase text-slate-900 tracking-wider">⚡ Ataques Rápidos:</h5>
+                <div className="space-y-1.5">
+                  {movesetAnalysis.fastMoves.map((m) => (
+                    <div key={m.id} className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${SOLID_TYPE_COLORS[m.type]}`}>
+                          {getTypeLabel(m.type, language)}
+                        </span>
+                        <span className="font-extrabold text-slate-900">{m.spanishName}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 font-bold">
+                        Pwr: <strong className="text-slate-900">{m.power}</strong> | EPS: <strong className="text-blue-700">{m.eps}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Charged Attacks List */}
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 space-y-2">
+                <h5 className="text-xs font-black uppercase text-slate-900 tracking-wider">💥 Ataques Cargados:</h5>
+                <div className="space-y-1.5">
+                  {movesetAnalysis.chargedMoves.map((m) => (
+                    <div key={m.id} className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${SOLID_TYPE_COLORS[m.type]}`}>
+                          {getTypeLabel(m.type, language)}
+                        </span>
+                        <span className="font-extrabold text-slate-900">
+                          {m.spanishName} {m.isLegacy ? '*' : ''}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 font-bold">
+                        Pwr: <strong className="text-slate-900">{m.power}</strong> | Barras: <strong className="text-purple-700">{m.bars}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB CONTENT 2: STATS, MAX CP TABLE & TYPE CHART */}
+        {activeTab === 'stats' && (
+          <div className="space-y-4 font-sans">
+            {/* Base Stats Display */}
+            <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 space-y-3">
+              <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
+                <BarChart3 className="w-4 h-4 text-purple-600" />
+                Estadísticas Base de la Especie:
+              </h4>
+
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-extrabold text-amber-600 uppercase block">⚡ Ataque Base</span>
+                  <strong className="text-xl font-black text-slate-900">{baseAtk}</strong>
+                </div>
+
+                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-extrabold text-blue-600 uppercase block">🛡️ Defensa Base</span>
+                  <strong className="text-xl font-black text-slate-900">{baseDef}</strong>
+                </div>
+
+                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-extrabold text-emerald-600 uppercase block">❤️ Salud Base</span>
+                  <strong className="text-xl font-black text-slate-900">{baseSta}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Max CP by Levels Table */}
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 space-y-2.5 shadow-xs">
+              <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-red-600" />
+                CP Máximo por Niveles Clave (100% IVs):
+              </h4>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 block">Nvl. 15 (Misión)</span>
+                  <strong className="text-slate-900 font-black text-sm">{cpLvl15} CP</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 block">Nvl. 20 (Raid)</span>
+                  <strong className="text-slate-900 font-black text-sm">{cpLvl20} CP</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 block">Nvl. 25 (Clima)</span>
+                  <strong className="text-slate-900 font-black text-sm">{cpLvl25} CP</strong>
+                </div>
+
+                <div className="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+                  <span className="text-[10px] font-bold text-blue-700 block">Nvl. 40 (Máx Caramelo)</span>
+                  <strong className="text-blue-950 font-black text-sm">{cpLvl40} CP</strong>
+                </div>
+
+                <div className="bg-purple-50 p-2.5 rounded-xl border border-purple-200 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-purple-700 block">Nvl. 50 (Máx XL)</span>
+                  <strong className="text-purple-950 font-black text-sm">{cpLvl50} CP</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Type Chart Weaknesses & Resistances */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-red-50/70 border-2 border-red-200 rounded-2xl p-3.5 space-y-2">
+                <h5 className="text-xs font-black uppercase text-red-900 flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600" />
+                  Debilidades (Recibe Más Daño):
+                </h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {weaknesses.map(({ type, multiplier }) => (
+                    <span
+                      key={type}
+                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${SOLID_TYPE_COLORS[type]}`}
+                    >
+                      <span>{getTypeLabel(type, language)}</span>
+                      <strong className="bg-red-950 text-white px-1.5 py-0.2 rounded-md text-[10px]">{multiplier.toFixed(2)}x</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/70 border-2 border-emerald-200 rounded-2xl p-3.5 space-y-2">
+                <h5 className="text-xs font-black uppercase text-emerald-900 flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                  Resistencias (Recibe Menos Daño):
+                </h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {resistances.map(({ type, multiplier }) => (
+                    <span
+                      key={type}
+                      className={`text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 border ${SOLID_TYPE_COLORS[type]}`}
+                    >
+                      <span>{getTypeLabel(type, language)}</span>
+                      <strong className="bg-emerald-950 text-white px-1.5 py-0.2 rounded-md text-[10px]">{multiplier.toFixed(2)}x</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB CONTENT 3: PVP TEAM RECOMMENDER & LEAGUE SELECTOR */}
         {activeTab === 'pvp' && (
           <div className="space-y-4">
             {/* League Selector Header */}
@@ -306,70 +626,51 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
           </div>
         )}
 
-        {/* TAB CONTENT 2: WEAKNESSES & RESISTANCES */}
-        {activeTab === 'weakness' && (
-          <div className="space-y-4">
-            {/* Weaknesses List */}
-            <div className="bg-red-50/70 border-2 border-red-200 rounded-2xl p-4 space-y-2.5">
-              <h4 className="text-xs font-black uppercase text-red-900 tracking-wider flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-red-600 fill-red-600" />
-                Debilidades (Recibe Más Daño):
-              </h4>
-
-              {weaknesses.length === 0 ? (
-                <p className="text-xs text-slate-600 font-bold">¡Este Pokémon no posee debilidades registradas!</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {weaknesses.map(({ type, multiplier }) => (
-                    <div
-                      key={type}
-                      className="flex items-center gap-1.5 bg-white border border-red-300 px-3 py-1.5 rounded-xl shadow-2xs"
-                    >
-                      <span className={`text-xs font-extrabold uppercase px-2 py-0.5 rounded-md border ${SOLID_TYPE_COLORS[type]}`}>
-                        {getTypeLabel(type, language)}
-                      </span>
-                      <span className="text-xs font-black text-red-700">
-                        {multiplier.toFixed(2)}x
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Resistances List */}
-            <div className="bg-emerald-50/70 border-2 border-emerald-200 rounded-2xl p-4 space-y-2.5">
-              <h4 className="text-xs font-black uppercase text-emerald-900 tracking-wider flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-emerald-600 fill-emerald-600" />
-                Resistencias e Inmunidades (Recibe Menos Daño):
-              </h4>
-
-              {resistances.length === 0 ? (
-                <p className="text-xs text-slate-600 font-bold">Este Pokémon no posee resistencias de tipo particulares.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {resistances.map(({ type, multiplier }) => (
-                    <div
-                      key={type}
-                      className="flex items-center gap-1.5 bg-white border border-emerald-300 px-3 py-1.5 rounded-xl shadow-2xs"
-                    >
-                      <span className={`text-xs font-extrabold uppercase px-2 py-0.5 rounded-md border ${SOLID_TYPE_COLORS[type]}`}>
-                        {getTypeLabel(type, language)}
-                      </span>
-                      <span className="text-xs font-black text-emerald-700">
-                        {multiplier.toFixed(2)}x
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB CONTENT 3: LORE, STORY & FUN FACTS */}
+        {/* TAB CONTENT 4: POKEDEX SPEC SHEET & LORE */}
         {activeTab === 'lore' && (
           <div className="space-y-4">
+            {/* Pokédex Official Spec Sheet (PokéHub Style) */}
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 space-y-3 shadow-xs font-sans">
+              <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                <Info className="w-4 h-4 text-blue-600" />
+                Ficha Técnica de Pokédex (Information Sheet):
+              </h4>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Número Pokédex:</span>
+                  <strong className="text-slate-900 font-black">#{pokedexNo}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Región de Origen:</span>
+                  <strong className="text-slate-900 font-black">
+                    {pokedexNo <= 151 ? 'Kanto (Gen 1)' : pokedexNo <= 251 ? 'Johto (Gen 2)' : pokedexNo <= 386 ? 'Hoenn (Gen 3)' : pokedexNo <= 493 ? 'Sinnoh (Gen 4)' : 'Unova / Kalos'}
+                  </strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Distancia Compañero:</span>
+                  <strong className="text-slate-900 font-black">3.0 km / Caramelo</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Intercambiable:</span>
+                  <strong className="text-emerald-600 font-black">Permitido (Sí)</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Costo 2do Ataque:</span>
+                  <strong className="text-purple-700 font-black">10,000 / 50 Caramelos</strong>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Variocolor (Shiny):</span>
+                  <strong className="text-amber-600 font-black">✨ Disponible</strong>
+                </div>
+              </div>
+            </div>
+
             {/* Story Card */}
             <div className="bg-blue-50/70 border-2 border-blue-200 rounded-2xl p-4 space-y-2">
               <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center gap-1.5">
@@ -378,17 +679,6 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
               </h4>
               <p className="text-xs text-slate-800 leading-relaxed font-medium">
                 {lore.story}
-              </p>
-            </div>
-
-            {/* Biology Card */}
-            <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 space-y-2">
-              <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-pink-600" />
-                Biología & Comportamiento:
-              </h4>
-              <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                {lore.biology}
               </p>
             </div>
 
