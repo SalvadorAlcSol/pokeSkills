@@ -1,0 +1,6 @@
+{
+  "name": "PoGo UK Route Tracker",
+  "description": "Optimized route tracker for Pokemon GO x National Trust UK event with real-time cooldown timers and TSP route optimization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
