@@ -26,6 +26,7 @@ import { getPvpAnalysis, PvpLeague } from '../utils/pvpRecommender';
 import { calculatePokemonMovesetAnalysis } from '../utils/movesetCalculator';
 import { PokemonType } from '../data/pokemonData';
 import { POGO_DATABASE } from '../data/pogoDatabase';
+import { getSpecialFormSpriteUrl } from '../utils/pokemonUtils';
 
 interface PokemonDetailModalProps {
   pokemon: UserPokemon;
@@ -86,6 +87,14 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
   const baseSta = dbMatch?.baseStamina || 180;
   const pokedexNo = dbMatch?.id || parseInt(String(pokemon.speciesId || '0'), 10) || 0;
 
+  // High-def Artwork Resolution
+  const rawSprite = pokemon.spriteUrl && !pokemon.spriteUrl.endsWith('/0.png') ? pokemon.spriteUrl : '';
+  const displaySpriteUrl =
+    rawSprite ||
+    getSpecialFormSpriteUrl(pokemon.speciesId || pokemon.name) ||
+    dbMatch?.spriteUrl ||
+    'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png';
+
   // Movesets, DPS & EPS Analysis
   const movesetAnalysis = calculatePokemonMovesetAnalysis(
     pokemon.name || 'Pokemon',
@@ -118,66 +127,73 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
   const cpLvl50 = calculatePogoPokemonCp(baseAtk, baseDef, baseSta, 50, 15, 15, 15);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl relative custom-scrollbar max-h-[94vh] overflow-y-auto text-slate-900 flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/75 backdrop-blur-md animate-fadeIn font-sans">
+      <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl relative custom-scrollbar max-h-[95vh] overflow-y-auto text-slate-900 flex flex-col gap-4">
         
-        {/* Header Section */}
-        <div className="flex items-start justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-100 p-2 border-2 border-slate-300 shadow-md shrink-0 flex items-center justify-center relative">
+        {/* Expanded Hero Header Section with Much Bigger Artwork */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between border-b border-slate-200 pb-4 gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left w-full">
+            {/* BIG Artwork Image Container */}
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-b from-slate-50 to-slate-100 p-2 border-2 border-slate-300 shadow-md shrink-0 flex items-center justify-center relative overflow-hidden group">
               <img
-                src={pokemon.spriteUrl || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'}
+                src={displaySpriteUrl}
                 alt={pokemon.name}
-                className="w-full h-full object-contain drop-shadow-md"
+                className="w-full h-full object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300"
               />
               {pokemon.isShadow && (
-                <span className="absolute -bottom-1 -right-1 bg-purple-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-purple-900 shadow-xs">
+                <span className="absolute bottom-1 right-1 bg-purple-800 text-white text-[9px] font-black px-2 py-0.5 rounded-lg border border-purple-950 shadow-md">
                   💀 OSCURO
                 </span>
               )}
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
                   {pokemon.name}
                 </h2>
-                <span className="text-xs font-black text-slate-600 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-md">
+                <span className="text-xs font-black text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded-lg">
                   #{pokedexNo}
                 </span>
-                <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-300 px-3 py-0.5 rounded-full">
                   Nvl. {pokemon.level || 30}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {/* Types Pills */}
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
                 {pokemonTypes.map((tItem) => (
                   <span
                     key={tItem}
-                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${getSolidTypeColor(tItem)}`}
+                    className={`text-xs font-extrabold uppercase px-3 py-1 rounded-xl border shadow-2xs ${getSolidTypeColor(tItem)}`}
                   >
                     {getTypeLabel(tItem, language)}
                   </span>
                 ))}
               </div>
 
-              <div className="text-xs text-slate-600 font-extrabold mt-1.5 flex items-center gap-3">
-                <span className="text-red-600 font-black">⚡ PC {pokemon.cp}</span>
+              {/* CP and IV Info */}
+              <div className="text-xs sm:text-sm text-slate-700 font-extrabold flex items-center justify-center sm:justify-start gap-3 flex-wrap pt-0.5">
+                <span className="text-red-600 font-black bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-lg">
+                  ⚡ PC {pokemon.cp}
+                </span>
                 <span>•</span>
-                <span className="text-emerald-700 font-black">🏆 IV {ivPercent}% ({pokemon.ivAtk}/{pokemon.ivDef}/{pokemon.ivHp})</span>
+                <span className="text-emerald-700 font-black bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+                  🏆 IV {ivPercent}% ({ivAtk}/{ivDef}/{ivHp})
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
             {onEdit && (
               <button
                 onClick={onEdit}
-                className="p-2 text-slate-700 hover:text-purple-700 bg-slate-100 hover:bg-purple-100 rounded-xl transition-all border border-slate-300 flex items-center gap-1 text-xs font-bold"
+                className="p-2 text-slate-700 hover:text-purple-700 bg-slate-100 hover:bg-purple-100 rounded-xl transition-all border border-slate-300 flex items-center gap-1.5 text-xs font-bold shadow-2xs"
                 title="Editar este Pokémon"
               >
                 <Edit3 className="w-4 h-4" />
-                <span className="hidden sm:inline">Editar</span>
+                <span>Editar</span>
               </button>
             )}
             <button
@@ -189,54 +205,54 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
           </div>
         </div>
 
-        {/* 4 Top Tabs Header Bar */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-300 text-xs font-black overflow-x-auto touch-pan-x custom-scrollbar">
+        {/* 4 Top Tabs Header Bar - GRID 2x2 on mobile, 4-wide on desktop (ZERO CLIPPING / CUT-OFF) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-300 text-xs sm:text-sm font-black">
           <button
             onClick={() => setActiveTab('moves')}
-            className={`flex-1 min-w-[120px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+            className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
               activeTab === 'moves'
-                ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-500/20'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Swords className="w-3.5 h-3.5" />
-            <span>⚔️ Movimientos & Combos</span>
+            <Swords className="w-4 h-4 shrink-0" />
+            <span className="truncate">⚔️ Movimientos</span>
           </button>
 
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+            className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
               activeTab === 'stats'
-                ? 'bg-red-600 text-white border-red-700 shadow-sm'
+                ? 'bg-red-600 text-white border-red-700 shadow-md ring-2 ring-red-500/20'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>📊 Stats & Max CP</span>
+            <BarChart3 className="w-4 h-4 shrink-0" />
+            <span className="truncate">📊 Stats & CP</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pvp')}
-            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+            className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
               activeTab === 'pvp'
-                ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+                ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-500/20'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Trophy className="w-3.5 h-3.5" />
-            <span>🛡️ Equipos PvP</span>
+            <Trophy className="w-4 h-4 shrink-0" />
+            <span className="truncate">🛡️ Equipos PvP</span>
           </button>
 
           <button
             onClick={() => setActiveTab('lore')}
-            className={`flex-1 min-w-[110px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 border shrink-0 ${
+            className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 border ${
               activeTab === 'lore'
-                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm'
+                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md ring-2 ring-amber-500/20'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>📜 Pokédex & Lore</span>
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="truncate">📜 Pokédex</span>
           </button>
         </div>
 
