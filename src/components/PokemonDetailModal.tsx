@@ -35,28 +35,28 @@ interface PokemonDetailModalProps {
 }
 
 const SOLID_TYPE_COLORS: Record<PokemonType, string> = {
-  normal: 'bg-neutral-600 text-white border-neutral-700 font-extrabold',
-  fire: 'bg-red-600 text-white border-red-700 font-extrabold',
-  water: 'bg-blue-600 text-white border-blue-700 font-extrabold',
-  grass: 'bg-emerald-600 text-white border-emerald-700 font-extrabold',
-  electric: 'bg-amber-400 text-slate-950 border-amber-500 font-black',
-  ice: 'bg-cyan-500 text-white border-cyan-600 font-extrabold',
-  fighting: 'bg-red-700 text-white border-red-800 font-extrabold',
-  poison: 'bg-purple-600 text-white border-purple-700 font-extrabold',
-  ground: 'bg-amber-700 text-white border-amber-800 font-extrabold',
-  flying: 'bg-indigo-500 text-white border-indigo-600 font-extrabold',
-  psychic: 'bg-pink-600 text-white border-pink-700 font-extrabold',
-  bug: 'bg-lime-600 text-white border-lime-700 font-extrabold',
-  rock: 'bg-stone-600 text-white border-stone-700 font-extrabold',
-  ghost: 'bg-violet-700 text-white border-violet-800 font-extrabold',
-  dragon: 'bg-indigo-700 text-white border-indigo-800 font-extrabold',
-  dark: 'bg-slate-800 text-white border-slate-900 font-extrabold',
-  steel: 'bg-slate-600 text-white border-slate-700 font-extrabold',
-  fairy: 'bg-pink-500 text-white border-pink-600 font-extrabold',
+  normal: 'bg-neutral-600 text-white border border-neutral-700 shadow-2xs font-black',
+  fire: 'bg-gradient-to-r from-red-600 to-amber-600 text-white border border-red-700 shadow-2xs font-black',
+  water: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border border-blue-700 shadow-2xs font-black',
+  grass: 'bg-gradient-to-r from-emerald-600 to-green-600 text-white border border-emerald-700 shadow-2xs font-black',
+  electric: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border border-amber-600 shadow-2xs font-black',
+  ice: 'bg-gradient-to-r from-cyan-500 to-sky-600 text-white border border-cyan-700 shadow-2xs font-black',
+  fighting: 'bg-gradient-to-r from-red-700 to-rose-800 text-white border border-red-900 shadow-2xs font-black',
+  poison: 'bg-gradient-to-r from-purple-600 to-fuchsia-700 text-white border border-purple-800 shadow-2xs font-black',
+  ground: 'bg-gradient-to-r from-amber-700 to-yellow-800 text-white border border-amber-900 shadow-2xs font-black',
+  flying: 'bg-gradient-to-r from-indigo-500 to-sky-600 text-white border border-indigo-700 shadow-2xs font-black',
+  psychic: 'bg-gradient-to-r from-pink-600 to-rose-600 text-white border border-pink-700 shadow-2xs font-black',
+  bug: 'bg-gradient-to-r from-lime-600 to-emerald-600 text-white border border-lime-700 shadow-2xs font-black',
+  rock: 'bg-gradient-to-r from-stone-600 to-neutral-700 text-white border border-stone-800 shadow-2xs font-black',
+  ghost: 'bg-gradient-to-r from-violet-700 to-purple-900 text-white border border-violet-900 shadow-2xs font-black',
+  dragon: 'bg-gradient-to-r from-indigo-700 to-violet-800 text-white border border-indigo-900 shadow-2xs font-black',
+  dark: 'bg-gradient-to-r from-slate-800 to-neutral-900 text-white border border-slate-950 shadow-2xs font-black',
+  steel: 'bg-gradient-to-r from-slate-600 to-zinc-700 text-white border border-slate-700 shadow-2xs font-black',
+  fairy: 'bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white border border-pink-600 shadow-2xs font-black',
 };
 
 const getSolidTypeColor = (tItem: PokemonType | string): string => {
-  return SOLID_TYPE_COLORS[tItem as PokemonType] || 'bg-slate-700 text-white font-extrabold';
+  return SOLID_TYPE_COLORS[tItem as PokemonType] || 'bg-slate-700 text-white font-black';
 };
 
 export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon, onClose, onEdit }) => {
@@ -145,15 +145,15 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
               )}
             </div>
 
-            <div className="space-y-1.5 flex-1">
+            <div className="space-y-2 flex-1">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
                   {pokemon.name}
                 </h2>
-                <span className="text-xs font-black text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded-lg">
+                <span className="text-xs font-black text-amber-300 bg-slate-800 border-2 border-slate-950 px-2.5 py-0.5 rounded-xl shadow-xs">
                   #{pokedexNo}
                 </span>
-                <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-300 px-3 py-0.5 rounded-full">
+                <span className="text-xs font-black text-white bg-purple-700 border-2 border-purple-800 px-3 py-0.5 rounded-xl shadow-xs">
                   Nvl. {pokemon.level || 30}
                 </span>
               </div>
@@ -163,20 +163,19 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                 {pokemonTypes.map((tItem) => (
                   <span
                     key={tItem}
-                    className={`text-xs font-extrabold uppercase px-3 py-1 rounded-xl border shadow-2xs ${getSolidTypeColor(tItem)}`}
+                    className={`text-xs font-black uppercase px-3 py-1 rounded-xl shadow-xs ${getSolidTypeColor(tItem)}`}
                   >
                     {getTypeLabel(tItem, language)}
                   </span>
                 ))}
               </div>
 
-              {/* CP and IV Info */}
-              <div className="text-xs sm:text-sm text-slate-700 font-extrabold flex items-center justify-center sm:justify-start gap-3 flex-wrap pt-0.5">
-                <span className="text-red-600 font-black bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-lg">
+              {/* CP and IV Info Badges */}
+              <div className="text-xs sm:text-sm text-slate-700 font-extrabold flex items-center justify-center sm:justify-start gap-2.5 flex-wrap pt-0.5">
+                <span className="text-white font-black bg-gradient-to-r from-red-600 to-amber-600 border-2 border-red-700 px-3 py-1 rounded-xl shadow-xs">
                   ⚡ PC {pokemon.cp}
                 </span>
-                <span>•</span>
-                <span className="text-emerald-700 font-black bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+                <span className="text-white font-black bg-gradient-to-r from-emerald-600 to-teal-600 border-2 border-emerald-700 px-3 py-1 rounded-xl shadow-xs">
                   🏆 IV {ivPercent}% ({ivAtk}/{ivDef}/{ivHp})
                 </span>
               </div>
@@ -698,37 +697,37 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
                 Ficha Técnica de Pokédex (Information Sheet):
               </h4>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Número Pokédex:</span>
-                  <strong className="text-slate-900 font-black">#{pokedexNo}</strong>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-sans">
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Número Pokédex:</span>
+                  <strong className="text-slate-900 font-black text-sm">#{pokedexNo}</strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Región de Origen:</span>
-                  <strong className="text-slate-900 font-black">
-                    {pokedexNo <= 151 ? 'Kanto (Gen 1)' : pokedexNo <= 251 ? 'Johto (Gen 2)' : pokedexNo <= 386 ? 'Hoenn (Gen 3)' : pokedexNo <= 493 ? 'Sinnoh (Gen 4)' : 'Unova / Kalos'}
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Región de Origen:</span>
+                  <strong className="text-blue-900 font-black">
+                    {pokedexNo <= 151 ? 'Kanto (Gen 1)' : pokedexNo <= 251 ? 'Johto (Gen 2)' : pokedexNo <= 386 ? 'Hoenn (Gen 3)' : pokedexNo <= 493 ? 'Sinnoh (Gen 4)' : pokedexNo <= 649 ? 'Teselia (Gen 5)' : pokedexNo <= 721 ? 'Kalos (Gen 6)' : pokedexNo <= 809 ? 'Alola (Gen 7)' : pokedexNo <= 905 ? 'Galar (Gen 8)' : 'Paldea (Gen 9)'}
                   </strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Distancia Compañero:</span>
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Distancia Compañero:</span>
                   <strong className="text-slate-900 font-black">{fullDetails.buddyDistanceKm.toFixed(1)} km / Caramelo</strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Intercambiable:</span>
-                  <strong className="text-emerald-600 font-black">{fullDetails.tradeNote}</strong>
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Intercambiable:</span>
+                  <strong className="text-emerald-700 font-black">{fullDetails.tradeNote}</strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Costo 2do Ataque:</span>
-                  <strong className="text-purple-700 font-black">{fullDetails.secondMoveStardust.toLocaleString()} Polvo / {fullDetails.secondMoveCandy} Caramelos</strong>
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Costo 2do Ataque:</span>
+                  <strong className="text-purple-800 font-black">{fullDetails.secondMoveStardust.toLocaleString()} Polvo / {fullDetails.secondMoveCandy} Caramelos</strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Variocolor (Shiny):</span>
-                  <strong className="text-amber-600 font-black">✨ Disponible</strong>
+                <div className="bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-300 shadow-2xs space-y-0.5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase block">Variocolor (Shiny):</span>
+                  <strong className="text-amber-700 font-black">✨ Disponible</strong>
                 </div>
               </div>
             </div>

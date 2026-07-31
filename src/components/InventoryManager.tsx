@@ -636,34 +636,34 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
       {/* Top Banner Badges */}
       <div className="flex items-center gap-2 mb-3 flex-wrap cursor-pointer" onClick={onSelect}>
         <span
-          className={`text-xs px-2.5 py-0.5 rounded-full font-black shadow-xs ${
+          className={`text-xs px-3 py-1 rounded-xl font-black shadow-2xs border ${
             activeMegaForm
-              ? 'bg-pink-600 text-white'
-              : 'bg-blue-600 text-white'
+              ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white border-pink-700'
+              : 'bg-gradient-to-r from-red-600 to-amber-600 text-white border-red-700'
           }`}
         >
-          CP {displayCp}
+          ⚡ PC {displayCp}
         </span>
 
-        <span className="text-white text-xs font-extrabold bg-slate-700 px-2.5 py-0.5 rounded-full">
+        <span className="text-white text-xs font-black bg-purple-700 border border-purple-800 px-3 py-1 rounded-xl shadow-2xs">
           Nv. {pokemon.level}
         </span>
 
         <span
-          className={`text-xs px-2.5 py-0.5 rounded-full font-black shadow-xs ${
+          className={`text-xs px-3 py-1 rounded-xl font-black shadow-2xs border ${
             isPerfect
-              ? 'bg-amber-400 text-slate-950'
+              ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-600'
               : ivPct >= 90
-              ? 'bg-purple-600 text-white'
-              : 'bg-slate-700 text-white'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-700'
+              : 'bg-slate-800 text-white border-slate-900'
           }`}
         >
-          {isPerfect ? '🏆 100%' : `${ivPct}%`}
+          {isPerfect ? '🏆 IV 100%' : `IV ${ivPct}%`}
         </span>
 
         {/* Read-only Shadow Badge */}
         {pokemon.isShadow && (
-          <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-extrabold">
+          <span className="text-[10px] bg-purple-800 text-white border border-purple-950 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
             💀 Oscuro
           </span>
         )}
