@@ -106,7 +106,7 @@ export const PokemonDetailModal: React.FC<PokemonDetailModalProps> = ({ pokemon,
   const { weaknesses, resistances } = getPokemonWeaknessesAndResistances(pokemonTypes);
 
   // Lore & Trivia from Main Series & Anime
-  const lore = getPokemonLore(pokemon.name || fullDetails.displayName, pokemonTypes);
+  const lore = getPokemonLore(pokemon.name || fullDetails.displayName, pokemonTypes, pokedexNo);
 
   // PvP League Analysis & Teammate Trio recommendations
   const pvpInfo = getPvpAnalysis(pokemon.name || fullDetails.displayName, pokemonTypes, selectedLeague);
