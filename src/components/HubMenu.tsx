@@ -55,21 +55,8 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
               <p className="text-xs text-[#97E1E1] font-bold">{t.hubSubtitle}</p>
             </div>
           </div>
-
-          {/* Right Header Actions: Mi Caja Profile Button & Language Selector */}
+          {/* Right Header Actions: Language Selector */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => onSelectTool('inventory')}
-              className="px-3.5 py-1.5 bg-[#FFE550] hover:bg-yellow-300 text-[#0B1B3C] font-black rounded-xl text-xs shadow-md transition-all flex items-center gap-2 border border-yellow-400 transform hover:scale-105"
-              title="Abrir Perfil & Mi Caja de Pokémon"
-            >
-              <span className="text-sm">📦</span>
-              <span>Mi Caja Pokémon</span>
-              <span className="bg-[#0B1B3C] text-[#FFE550] px-2 py-0.2 rounded-full text-[10px] font-black border border-blue-900">
-                {inventory.length}
-              </span>
-            </button>
-
             {/* Language Selector Top-Right */}
             <LanguageSelector />
           </div>
@@ -79,8 +66,8 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-10 flex flex-col items-center">
         {/* Hero Banner with Official Slogan */}
-        <div className="text-center max-w-2xl mb-10 space-y-3">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C22615] text-white text-xs font-black uppercase tracking-wider shadow-md border border-red-700">
+        <div className="text-center max-w-2xl mb-10 space-y-3 font-sans">
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C22615] text-white text-xs font-black uppercase tracking-wider shadow-md border border-red-700 font-pogo">
             <PokeballIcon className="w-4 h-4" /> "Get Up and GO!"
           </span>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-md">
@@ -200,43 +187,6 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
-          </div>
-
-        </div>
-
-        {/* Cloud & Device Synchronization Banner */}
-        <div className="mt-8 max-w-4xl w-full bg-gradient-to-r from-blue-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-blue-500/30 flex flex-col sm:flex-row items-center justify-between gap-5">
-          <div className="space-y-1 text-center sm:text-left">
-            <h3 className="text-lg font-black text-yellow-300 flex items-center justify-center sm:justify-start gap-2">
-              📱 Sincronizador 24/7 (PC ➔ Celular)
-            </h3>
-            <p className="text-xs text-blue-100 font-medium max-w-xl">
-              Exporta el 100% de tus datos (Rutas avanzadas, Poképaradas, Avance e Inventario de Pokémon) para restaurarlos en tu celular con 1 solo clic.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={exportFullAppBackup}
-              className="px-4 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black rounded-xl shadow-md transition-all text-xs flex items-center gap-2 border border-yellow-500"
-            >
-              <Download className="w-4 h-4 text-red-700" />
-              <span>Guardar Todo</span>
-            </button>
-
-            <label className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-md transition-all text-xs flex items-center gap-2 border border-blue-400 cursor-pointer">
-              <FolderInput className="w-4 h-4 text-yellow-300" />
-              <span>Cargar Todo</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) importFullAppBackupFile(file);
-                }}
-                className="hidden"
-              />
-            </label>
           </div>
         </div>
 

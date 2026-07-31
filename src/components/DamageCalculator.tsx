@@ -140,6 +140,16 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
     }
   };
 
+  // Reactive selector for user box selection
+  useEffect(() => {
+    if (useUserInventoryAttacker && selectedUserPokemonId) {
+      const poke = inventory.find((p) => p.id === selectedUserPokemonId);
+      if (poke) {
+        selectAttackerFromUserPokemon(poke);
+      }
+    }
+  }, [selectedUserPokemonId, useUserInventoryAttacker, inventory]);
+
   // Defender State
   const [defenderBase, setDefenderBase] = useState<PogoPokemon>(POGO_DATABASE[1]); // Venusaur
   const [isDefenderMegaActive, setIsDefenderMegaActive] = useState<boolean>(false);
@@ -156,6 +166,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
 
   // Reset Attacker Special Form state when Attacker Base changes
   useEffect(() => {
+    if (useUserInventoryAttacker) return;
     setIsAttackerMegaActive(false);
     const forms = attackerBase.specialForms || attackerBase.megaForms;
     if (forms && forms.length > 0) {
@@ -175,7 +186,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
     } else {
       setSelectedChargedMove2(null);
     }
-  }, [attackerBase]);
+  }, [attackerBase, useUserInventoryAttacker]);
 
   // Reset Defender Special Form state when Defender Base changes
   useEffect(() => {
@@ -232,6 +243,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
 
   // Sync moves when activeAttackerMoves change
   useEffect(() => {
+    if (useUserInventoryAttacker) return;
     if (activeAttackerMoves.fastMoves.length > 0) {
       setSelectedFastMove(activeAttackerMoves.fastMoves[0]);
     }
@@ -243,7 +255,7 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
     } else {
       setSelectedChargedMove2(null);
     }
-  }, [activeAttackerMoves]);
+  }, [activeAttackerMoves, useUserInventoryAttacker]);
 
   // Active Defender Data (Normal vs Special Form based on Checkbox + Selected Form ID)
   const activeDefender = useMemo(() => {
