@@ -65,13 +65,22 @@ export function getPokemonLore(pokemonName: string, types: string[], speciesId?:
 
 function formatLoreEntry(entry: any, pokemonName: string, types: string[]): PokemonLore {
   const displayName = entry.spanishName || pokemonName.replace(/\(.*\)/g, '').trim();
-  const genusText = entry.genus ? ` (${entry.genus})` : '';
+  const rawStory = entry.story || '';
+
+  let finalStory = '';
+  if (rawStory) {
+    if (rawStory.toLowerCase().startsWith(displayName.toLowerCase())) {
+      finalStory = rawStory;
+    } else {
+      finalStory = `${displayName}: ${rawStory}`;
+    }
+  } else {
+    finalStory = `${displayName} es un Pokémon registrado en la Pokédex oficial.`;
+  }
 
   return {
     genus: entry.genus || '',
-    story: entry.story
-      ? `${displayName}${genusText}: ${entry.story}`
-      : `${displayName} es un Pokémon emblemático registrado en la Pokédex oficial.`,
+    story: finalStory,
     biology: entry.biology || entry.story || `${displayName} destaca por su biología y adaptabilidad en combate.`,
     trivia: Array.isArray(entry.trivia) && entry.trivia.length > 0
       ? entry.trivia
