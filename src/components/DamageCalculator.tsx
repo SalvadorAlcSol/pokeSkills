@@ -29,6 +29,8 @@ import { getTranslatedMoveName } from '../utils/pogoMoveTranslator';
 import { getTypeLabel } from '../utils/pogoTypeTranslator';
 import { TypeFilterBar } from './TypeFilterBar';
 import { TypeWeaknessBadgeList } from './TypeWeaknessBadgeList';
+import { useInventoryStore } from '../store/inventoryStore';
+import { UserPokemon } from '../types/UserInventory';
 
 interface DamageCalculatorProps {
   onBackToHub?: () => void;
@@ -58,6 +60,10 @@ const TYPE_COLORS: Record<PokemonType, string> = {
 
 
 export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub }) => {
+  const { inventory } = useInventoryStore();
+  const [useUserInventoryAttacker, setUseUserInventoryAttacker] = useState<boolean>(false);
+  const [selectedUserPokemonId, setSelectedUserPokemonId] = useState<string>('');
+
   // Custom database state
   const [customDatabase, setCustomDatabase] = useState<PogoPokemon[]>(POGO_DATABASE);
 
@@ -82,6 +88,57 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
   const [selectedChargedMove2, setSelectedChargedMove2] = useState<PogoMove | null>(
     POGO_DATABASE[0].chargedMoves[1] || null
   );
+
+  // Helper to load exact stats and moves from user's box item
+  const selectAttackerFromUserPokemon = (userPoke: UserPokemon) => {
+    setSelectedUserPokemonId(userPoke.id);
+
+    const dbMatch = POGO_DATABASE.find(
+      (p) => p.id.toString() === userPoke.speciesId || p.name.toLowerCase() === userPoke.name.toLowerCase()
+    );
+
+    if (dbMatch) {
+      setAttackerBase(dbMatch);
+      setAttackerLevel(userPoke.level || 40);
+      setAttackerIvAtk(userPoke.ivAtk ?? 15);
+      setAttackerIvDef(userPoke.ivDef ?? 15);
+      setAttackerIvHp(userPoke.ivHp ?? 15);
+
+      const fMove = dbMatch.fastMoves.find(
+        (m) => m.name.toLowerCase() === userPoke.fastMove?.toLowerCase() || m.id.toLowerCase() === userPoke.fastMove?.toLowerCase()
+      );
+      if (fMove) setSelectedFastMove(fMove);
+
+      const cMove1 = dbMatch.chargedMoves.find(
+        (m) => m.name.toLowerCase() === userPoke.chargedMove1?.toLowerCase() || m.id.toLowerCase() === userPoke.chargedMove1?.toLowerCase()
+      );
+      if (cMove1) setSelectedChargedMove1(cMove1);
+
+      if (userPoke.chargedMove2) {
+        setEnableSecondCharged(true);
+        const cMove2 = dbMatch.chargedMoves.find(
+          (m) => m.name.toLowerCase() === userPoke.chargedMove2?.toLowerCase() || m.id.toLowerCase() === userPoke.chargedMove2?.toLowerCase()
+        );
+        if (cMove2) setSelectedChargedMove2(cMove2);
+      } else {
+        setEnableSecondCharged(false);
+        setSelectedChargedMove2(null);
+      }
+
+      if (userPoke.unlockedMegaForm) {
+        const forms = dbMatch.specialForms || dbMatch.megaForms;
+        if (forms && forms.length > 0) {
+          setIsAttackerMegaActive(true);
+          const formMatch = forms.find((f) => f.id.toLowerCase() === userPoke.unlockedMegaForm?.toLowerCase());
+          if (formMatch) {
+            setSelectedAttackerMegaId(formMatch.id);
+          }
+        }
+      } else {
+        setIsAttackerMegaActive(false);
+      }
+    }
+  };
 
   // Defender State
   const [defenderBase, setDefenderBase] = useState<PogoPokemon>(POGO_DATABASE[1]); // Venusaur
@@ -576,6 +633,62 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
               <span className="text-[10px] font-extrabold text-blue-800 bg-blue-100 border border-blue-300 px-2.5 py-0.5 rounded-full uppercase">
                 {t.offensiveTag}
               </span>
+            </div>
+            {/* Mis Pokémon (Caja) Box Selector Switch */}
+            <div className="bg-amber-50 p-3.5 rounded-2xl border-2 border-amber-300 flex flex-col gap-2.5 shadow-xs">
+              <label className="flex items-center gap-2.5 text-xs font-black text-amber-950 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useUserInventoryAttacker}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setUseUserInventoryAttacker(checked);
+                    if (checked && inventory.length > 0) {
+                      selectAttackerFromUserPokemon(inventory[0]);
+                    }
+                  }}
+                  className="accent-amber-600 w-4 h-4 rounded cursor-pointer"
+                />
+                <span className="flex items-center gap-1.5 font-extrabold text-sm">
+                  <span>📦 Usar Mis Pokémon (Mi Caja)</span>
+                  <span className="bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black border border-amber-500">
+                    {inventory.length} en caja
+                  </span>
+                </span>
+              </label>
+
+              {useUserInventoryAttacker && (
+                <div className="pt-2 border-t border-amber-200 space-y-1.5">
+                  {inventory.length === 0 ? (
+                    <p className="text-xs text-amber-900 font-extrabold italic bg-amber-100 p-2 rounded-xl border border-amber-300">
+                      ⚠️ Tu caja Pokémon está vacía. ¡Añade o importa tus Pokémon desde tu perfil arriba (📦 Mi Caja) para usarlos aquí!
+                    </p>
+                  ) : (
+                    <div>
+                      <label className="block text-[11px] font-black text-amber-950 uppercase tracking-wider mb-1">
+                        Cargar Pokémon de Mi Caja (Stats & Movimientos Reales):
+                      </label>
+                      <select
+                        value={selectedUserPokemonId}
+                        onChange={(e) => {
+                          const poke = inventory.find((p) => p.id === e.target.value);
+                          if (poke) selectAttackerFromUserPokemon(poke);
+                        }}
+                        className="w-full bg-white border-2 border-amber-400 rounded-xl px-3 py-2 text-xs text-slate-900 font-black shadow-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        {inventory.map((poke) => {
+                          const ivPct = Math.round(((poke.ivAtk + poke.ivDef + poke.ivHp) / 45) * 100);
+                          return (
+                            <option key={poke.id} value={poke.id}>
+                              {poke.nickname ? `${poke.nickname} (${poke.name})` : poke.name} — Nvl {poke.level || 30} | PC {poke.cp} | IV {ivPct}% ({poke.ivAtk}/{poke.ivDef}/{poke.ivHp})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Type Filter Bar for Attacker */}

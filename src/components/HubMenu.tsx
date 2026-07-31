@@ -3,6 +3,7 @@ import { MapPin, Swords, Shield, Sparkles, ArrowRight, Activity, Compass, Downlo
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSelector } from './LanguageSelector';
 import { exportFullAppBackup, importFullAppBackupFile } from '../utils/backupService';
+import { useInventoryStore } from '../store/inventoryStore';
 
 const PokeballIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -18,6 +19,7 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
   onSelectTool,
 }) => {
   const { t } = useLanguage();
+  const { inventory } = useInventoryStore();
 
   return (
     <div className="min-h-screen bg-[#0B1B3C] text-white flex flex-col font-pogo relative">
@@ -54,12 +56,19 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
             </div>
           </div>
 
-          {/* Right Header Actions: Tools Badge & Language Selector */}
+          {/* Right Header Actions: Mi Caja Profile Button & Language Selector */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 text-xs font-black text-[#0B1B3C] bg-[#FFE550] border border-yellow-400 px-3.5 py-1.5 rounded-full shadow-sm">
-              <Sparkles className="w-4 h-4 text-[#C22615]" />
-              <span>{t.toolsReady}</span>
-            </div>
+            <button
+              onClick={() => onSelectTool('inventory')}
+              className="px-3.5 py-1.5 bg-[#FFE550] hover:bg-yellow-300 text-[#0B1B3C] font-black rounded-xl text-xs shadow-md transition-all flex items-center gap-2 border border-yellow-400 transform hover:scale-105"
+              title="Abrir Perfil & Mi Caja de Pokémon"
+            >
+              <span className="text-sm">📦</span>
+              <span>Mi Caja Pokémon</span>
+              <span className="bg-[#0B1B3C] text-[#FFE550] px-2 py-0.2 rounded-full text-[10px] font-black border border-blue-900">
+                {inventory.length}
+              </span>
+            </button>
 
             {/* Language Selector Top-Right */}
             <LanguageSelector />
@@ -83,7 +92,7 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
         </div>
 
         {/* Grid de Tarjetas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
           {/* Tool 1: Route Tracker */}
           <div
             onClick={() => onSelectTool('route-tracker')}
@@ -193,41 +202,6 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
             </div>
           </div>
 
-          {/* Tool 4: Inventory Manager */}
-          <div
-            onClick={() => onSelectTool('inventory')}
-            className="group relative bg-white border-2 border-slate-200 hover:border-purple-600 rounded-3xl p-6 cursor-pointer transition-all duration-300 shadow-md hover:shadow-xl flex flex-col justify-between overflow-hidden transform hover:-translate-y-1"
-          >
-            <div className="h-3.5 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 -mx-6 -mt-6 mb-6 border-b border-purple-700" />
-
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                  <Activity className="w-7 h-7 text-white" />
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-purple-600 text-white shadow-sm flex items-center gap-1">
-                  📦 Caja Pokémon
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-purple-600 transition-colors flex items-center gap-2">
-                Mi Caja Pokémon
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                Importa tus Pokémon desde PokeGenie para obtener recomendaciones de incursiones personalizadas y cálculos de daño reales.
-              </p>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-purple-600" /> Personalizado
-              </span>
-              <button className="px-4 py-2 rounded-xl bg-purple-600 group-hover:bg-purple-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5">
-                <span>Gestionar Caja</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Cloud & Device Synchronization Banner */}
