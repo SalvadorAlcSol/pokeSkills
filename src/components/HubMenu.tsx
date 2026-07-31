@@ -20,44 +20,44 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-slate-800 flex flex-col font-sans relative">
-      {/* Pokédex Header Bar */}
-      <header className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 border-b-4 border-red-700 text-white shadow-md sticky top-0 z-30 px-4 sm:px-8 py-3.5">
+    <div className="min-h-screen bg-[#0B1B3C] text-white flex flex-col font-pogo relative">
+      {/* Official Pokémon GO Header Bar */}
+      <header className="bg-gradient-to-r from-[#0B1B3C] via-[#1160C0] to-[#0B1B3C] border-b-4 border-[#C22615] text-white shadow-xl sticky top-0 z-30 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Pokédex Lens & Title */}
+          {/* Pokédex Sensor Lens & Title */}
           <div className="flex items-center gap-4">
             {/* Pokédex Sensor Lenses */}
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-sky-400 border-3 border-white shadow-[0_2px_8px_rgba(0,0,0,0.2)] flex items-center justify-center relative overflow-hidden">
-                <div className="w-3 h-3 rounded-full bg-white opacity-80 absolute top-1.5 left-1.5" />
+              <div className="w-10 h-10 rounded-full bg-[#97E1E1] border-3 border-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] flex items-center justify-center relative overflow-hidden">
+                <div className="w-3 h-3 rounded-full bg-white opacity-90 absolute top-1.5 left-1.5" />
               </div>
               <div className="flex gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-red-400 border border-red-700 shadow-inner" />
-                <span className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-700 shadow-inner" />
+                <span className="w-3 h-3 rounded-full bg-[#C22615] border border-red-900 shadow-inner" />
+                <span className="w-3 h-3 rounded-full bg-[#FFE550] border border-yellow-700 shadow-inner" />
                 <span className="w-3 h-3 rounded-full bg-emerald-400 border border-emerald-700 shadow-inner" />
               </div>
             </div>
 
-            <div className="h-6 w-[2px] bg-red-400/60 hidden sm:block" />
+            <div className="h-6 w-[2px] bg-blue-400/40 hidden sm:block" />
 
             <div>
               <div className="flex items-center gap-2">
-                <PokeballIcon className="w-6 h-6" />
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-yellow-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                <PokeballIcon className="w-6 h-6 text-[#C22615]" />
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#FFE550] drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)] font-pogo">
                   {t.hubTitle}
                 </h1>
-                <span className="text-[11px] font-bold uppercase tracking-wider bg-yellow-400 text-red-900 px-2 py-0.5 rounded-full shadow-sm">
-                  v2.0 PRO
+                <span className="text-[11px] font-black uppercase tracking-wider bg-[#FFE550] text-[#0B1B3C] px-2.5 py-0.5 rounded-full shadow-sm border border-yellow-400">
+                  GO PRO
                 </span>
               </div>
-              <p className="text-xs text-red-100 font-medium">{t.hubSubtitle}</p>
+              <p className="text-xs text-[#97E1E1] font-bold">{t.hubSubtitle}</p>
             </div>
           </div>
 
           {/* Right Header Actions: Tools Badge & Language Selector */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 text-xs font-bold text-red-900 bg-yellow-300/90 border border-yellow-400 px-3.5 py-1.5 rounded-full shadow-sm">
-              <Sparkles className="w-4 h-4 text-red-600" />
+            <div className="hidden md:flex items-center gap-2 text-xs font-black text-[#0B1B3C] bg-[#FFE550] border border-yellow-400 px-3.5 py-1.5 rounded-full shadow-sm">
+              <Sparkles className="w-4 h-4 text-[#C22615]" />
               <span>{t.toolsReady}</span>
             </div>
 
@@ -69,15 +69,15 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-10 flex flex-col items-center">
-        {/* Hero Banner */}
+        {/* Hero Banner with Official Slogan */}
         <div className="text-center max-w-2xl mb-10 space-y-3">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-sm">
-            <PokeballIcon className="w-4 h-4" /> {t.hubTagline}
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C22615] text-white text-xs font-black uppercase tracking-wider shadow-md border border-red-700">
+            <PokeballIcon className="w-4 h-4" /> "Get Up and GO!"
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-md">
             {t.selectTool}
           </h2>
-          <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed">
+          <p className="text-sm sm:text-base text-[#97E1E1] font-bold leading-relaxed">
             {t.routeTrackerDesc}
           </p>
         </div>

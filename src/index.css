@@ -1,11 +1,39 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --pogo-prussian-blue: #0B1B3C;
+    --pogo-pale-sky: #97E1E1;
+    --pogo-tuscan-red: #C22615;
+    --pogo-dijon-yellow: #FFE550;
+    --pogo-sapphire-blue: #1160C0;
+  }
+
   body {
-    font-family: 'Outfit', 'Nunito', system-ui, -apple-system, sans-serif;
+    font-family: 'Lato', 'Outfit', system-ui, -apple-system, sans-serif;
+    background-color: #0B1B3C;
+    color: #F4F5F7;
   }
 }
 
-.font-pokeball {
-  font-family: 'Outfit', 'Nunito', sans-serif;
+.font-pogo {
+  font-family: 'Lato', sans-serif;
 }
+
+.bg-pogo-prussian { background-color: #0B1B3C; }
+.bg-pogo-red { background-color: #C22615; }
+.bg-pogo-blue { background-color: #1160C0; }
+.bg-pogo-yellow { background-color: #FFE550; }
+.bg-pogo-sky { background-color: #97E1E1; }
+
+.text-pogo-prussian { color: #0B1B3C; }
+.text-pogo-red { color: #C22615; }
+.text-pogo-blue { color: #1160C0; }
+.text-pogo-yellow { color: #FFE550; }
+.text-pogo-sky { color: #97E1E1; }
+
+.border-pogo-prussian { border-color: #0B1B3C; }
+.border-pogo-red { border-color: #C22615; }
+.border-pogo-blue { border-color: #1160C0; }
+.border-pogo-yellow { border-color: #FFE550; }
+.border-pogo-sky { border-color: #97E1E1; }

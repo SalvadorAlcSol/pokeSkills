@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   const mins = metrics.totalDurationMins % 60;
 
   return (
-    <header className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 border-b-4 border-red-700 text-white px-4 py-3 sticky top-0 z-30 shadow-md">
+    <header className="bg-gradient-to-r from-[#0B1B3C] via-[#1160C0] to-[#0B1B3C] border-b-4 border-[#C22615] text-white px-4 py-3 sticky top-0 z-30 shadow-xl font-pogo">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Brand Title & Back to Hub */}
         <div className="flex items-center justify-between">
@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
             {onBackToHub && (
               <button
                 onClick={onBackToHub}
-                className="px-3 py-1.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-red-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm mr-1"
+                className="px-3 py-1.5 rounded-xl bg-[#FFE550] hover:bg-yellow-300 text-[#0B1B3C] font-black text-xs flex items-center gap-1.5 transition-all shadow-md mr-1 border border-yellow-400"
                 title="Volver al Menú del Hub"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -68,14 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight text-yellow-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                <h1 className="text-lg font-black tracking-tight text-[#FFE550] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-pogo">
                   ROUTE TRACKER
                 </h1>
-                <span className="text-[10px] uppercase font-extrabold text-red-900 bg-yellow-400 px-2 py-0.5 rounded-full">
-                  PoGo PRO
+                <span className="text-[10px] uppercase font-black text-[#0B1B3C] bg-[#FFE550] border border-yellow-400 px-2.5 py-0.5 rounded-full shadow-xs">
+                  GO PRO
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-red-100 mt-0.5 flex items-center gap-1.5">
+              <p className="text-[11px] font-bold text-[#97E1E1] mt-0.5 flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 27 POKÉSTOPS NACIONALES
               </p>
