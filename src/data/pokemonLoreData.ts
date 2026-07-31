@@ -6,245 +6,216 @@ export interface PokemonLore {
 }
 
 export const POKEMON_LORE_DATABASE: Record<string, PokemonLore> = {
+  // --- TESELIA / UNOVA LEGENDARIES & PSEUDO-LEGENDARIES ---
   kyurem: {
-    story: 'Kyurem es el Pokémon Frontera legendario de la región de Teselia (Unova). Es la cáscara helada y vacía que quedó tras la división del Dragón Original primordial. Al fusionarse con Zekrom mediante la Punta ADN (DNA Splicers), renace como Kyurem Negro, el titán del frío y los rayos.',
-    biology: 'En su forma Kyurem Negro, absorbe el poder eléctrico de Zekrom en el generador de su cola. Su temperatura corporal interna desciende hasta el cero absoluto (-273.15°C), congelando al instante todo lo que toca.',
+    story: 'Kyurem es el Pokémon Frontera legendario de Teselia (Unova). Es la cáscara helada que quedó tras la scisión del Dragón Original de la antigüedad. Al fusionarse con Zekrom mediante la Punta ADN, renace como Kyurem Negro, el titán del frío y los rayos.',
+    biology: 'En su forma Kyurem Negro, absorbe la energía eléctrica de Zekrom en la turbina de su cola. Su temperatura corporal interna desciende al cero absoluto (-273.15°C), congelando al instante todo a su alrededor.',
     trivia: [
-      'En Pokémon Blanco 2 y Negro 2, Ghechis (líder del Equipo Plasma) usó la Punta ADN para obligar a Kyurem a fusionarse con Zekrom y congelar la región entera.',
-      'Su ataque insignia exclusivo es Rayo Gélido (Freeze Shock), de tipo Hielo con 140 de potencia destructiva.',
-      'En la película "Kyurem vs. el Espadachín Místico (Keldeo)", es considerado el Pokémon Dragón más poderoso de la Tierra, capaz de cambiar entre sus formas Negra y Blanca a voluntad en combate.'
+      'Ghechis usó la Punta ADN en Pokémon Blanco 2 y Negro 2 para fusionar a Kyurem y congelar la región entera a cero absoluto.',
+      'Su ataque característico exclusivo es Rayo Gélido (Freeze Shock), de tipo Hielo con 140 de potencia.',
+      'En la película "Kyurem vs. el Espadachín Místico (Keldeo)", es considerado el Pokémon Dragón más poderoso de la Tierra.'
     ],
-    funFact: '¡Produce un aire tan gélido (-273.15°C) que puede congelar una ciudad entera y detener el movimiento atómico!'
+    funFact: '¡Produce un aire tan gélido (-273.15°C) que puede congelar una ciudad entera y detener el movimiento de los átomos!'
   },
-  kyuremblack: {
-    story: 'Kyurem Negro es la majestuosa forma resultante de la fusión de ADN entre Kyurem y Zekrom mediante la Punta ADN en la región de Teselia. Encarna la unión entre el cero absoluto y los ideales del rayo.',
-    biology: 'Canaliza la energía del rayo a través del ala izquierda y su cola de turbina electrificada. Desata una fuerza física descomunal capaz de pulverizar glaciares y montañas con sus garras de hielo negro.',
+  hydreigon: {
+    story: 'Hydreigon es el feroz Pokémon Voraz pseudo-legendario de tipo Dragón/Siniestro de la región de Teselia (Unova). Evoluciona de Zweilous al nivel 64, el nivel de evolución por nivel más alto de todos los Pokémon.',
+    biology: 'Posee tres cabezas, aunque solo la cabeza central alberga su cerebro primario. Las dos cabezas de sus brazos carecen de cerebro e instintivamente muerden y devoran todo lo que se mueve a su alrededor.',
     trivia: [
-      'Posee una de las estadísticas de Ataque Físico más altas de toda la historia de Pokémon (170 Base Atk).',
-      'Su movimiento característico es Rayo Gélido (Freeze Shock), acompañado por la habilidad Terravoltio.',
-      'En el anime y películas, combatió contra el trío de los Espadachines Místicos (Cobalion, Terrakion y Virizion).'
+      'Es el Pokémon estrella del villano Ghechis (Equipo Plasma) y de la Campeona Iris de la Liga de Teselia.',
+      'Su concepto de diseño está inspirado en la mítica Hidra de Lerna y el monstruo mítico Yamata no Orochi.',
+      'Vuela usando sus tres pares de alas oscuras mientras devora territorios enteros.'
     ],
-    funFact: '¡Su brazo izquierdo y cola generan chispas eléctricas de millones de voltios envueltas en hielo eterno!'
+    funFact: '¡Las dos cabezas de sus brazos no piensan por sí mismas, simplemente atacan y muerden cualquier objetivo cercano!'
   },
-  kyuremwhite: {
-    story: 'Kyurem Blanco es la forma resultante de la fusión entre Kyurem y Reshiram mediante la Punta ADN. Representa la alianza entre el fuego de la verdad y el cero absoluto.',
-    biology: 'Su cola se transforma en una turbina de fuego blanco capaz de expulsar llamas a temperaturas estelares mientras su cuerpo permanece a cero absoluto.',
+  metagross: {
+    story: 'Metagross es el Pokémon Patas de Acero pseudo-legendario de tipo Acero/Psíquico de Hoenn. Nace de la fusión física de dos Metang (que a su vez nacieron de dos Beldum).',
+    biology: 'Sus cuatro cerebros interconectados por impulsos neuronales funcionan como una supercomputadora cuántica capaces de calcular trayectorias de ataque y probabilidades en milisegundos.',
     trivia: [
-      'Su ataque característico es Llama Gélida (Ice Burn), de tipo Hielo con 140 de potencia especial.',
-      'Posee 170 puntos de Ataque Especial base.',
-      'En los videojuegos principales de Nintendo DS, fue el Pokémon insignia de Pokémon Blanco 2.'
+      'Es el Pokémon insignia del Campeón de la Liga de Hoenn, Máximo Peñas (Steven Stone).',
+      'Posee una Megaevolución donde sus patas se orientan como cañones magnéticos flotantes.',
+      'Repliega sus cuatro patas para flotar por los aires a gran velocidad imitando un ovni.'
     ],
-    funFact: '¡Puede incinerar el ambiente circundante y congelarlo en el mismo instante!'
+    funFact: '¡Sus 4 cerebros combinados realizan cálculos matemáticos más rápido que las supercomputadoras más avanzadas de la Tierra!'
   },
-  reshiram: {
-    story: 'Reshiram es el Pokémon Blanco Verídico de Teselia. Nació cuando el Dragón Único se dividió entre los príncipes gemelos de la antigüedad, eligiendo al hermano que buscaba la Verdad.',
-    biology: 'Su cola es una turbina de combustión interna que puede abrasar el mundo entero con llamas blancas y alterar el clima del planeta.',
+  garchomp: {
+    story: 'Garchomp es el temible Pokémon Mach pseudo-legendario de tipo Dragón/Tierra de la región de Sinnoh. Es célebre por ser el compañero imbatible de la Campeona Cintia (Cynthia).',
+    biology: 'Su cuerpo aerodinámico y sus alas laterales le permiten volar por los cielos a velocidades supersónicas que rivalizan con un avión de combate militar.',
     trivia: [
-      'Su movimiento característico es Llama Fusión (Fusion Flare) y Llama Azul (Blue Flare).',
-      'En el anime, protagonizó la película "Pokémon: Blanco - Victini y Zekrom / Negro - Victini y Reshiram".',
-      'Vuela envolviendo los cielos en resplandores de fuego blanco deslumbrante.'
+      'Es el Pokémon más icónico de la Campeona Cintia en Pokémon Diamante, Perla y Platino.',
+      'Sus escamas finas reducen la resistencia del aire y rasgan a los oponentes al contacto.',
+      'Posee una Megaevolución con garras en forma de guadañas rojas.'
     ],
-    funFact: '¡Cuando vuela a toda velocidad, el calor expulsado por su cola mueve las masas de aire del planeta!'
+    funFact: '¡Vuela a velocidad supersónica por los cielos y atrapa a sus presas antes de que escuchen el estruendo de su paso!'
   },
-  zekrom: {
-    story: 'Zekrom es el Pokémon Negro Ideales de Teselia. Se escindió del Dragón Único para apoyar al hermano gemelo que luchaba por los Ideales.',
-    biology: 'El generador en forma de cono de su cola produce cantidades ilimitadas de electricidad. Oculta su cuerpo dentro de nubes de tormenta oscuras.',
+  salamence: {
+    story: 'Salamence es el Pokémon Dragón pseudo-legendario de Hoenn. Su historia es un símbolo de determinación: cuando era un Bagon, deseaba volar tanto que su ADN mutó para hacerle brotar alas gigantes.',
+    biology: 'Al evolucionar a Salamence, la intensa alegría de volar lo lleva a surcar los cielos escupiendo ráfagas de fuego por los valles.',
     trivia: [
-      'Sus movimientos característicos son Rayo Fusión (Fusion Bolt) y Ataque Fulgor (Bolt Strike).',
-      'Posee la habilidad Terravoltio, que le permite ignorar las habilidades defensivas enemigas.',
-      'En Pokémon Negro y Blanco, N invoca a Zekrom en el Palacio para desafiar al Campeón Mirto.'
+      'Es el Pokémon insignia del Alto Mando Dracena y de León en la saga de Hoenn.',
+      'En su Megaevolución (Mega Salamence), sus alas se unen formando un disco con forma de media luna llamado la "Cuchilla Creciente".',
+      'Desata tormentas de fuego sobre las colinas para expresar su euforia al volar.'
     ],
-    funFact: '¡Su cola gira como una gigantesca turbina de alta tensión capaz de electrocutar continentes!'
+    funFact: '¡Deseó tanto volar durante su etapa de Bagon que la fuerza de su voluntad cambió la estructura de su propio ADN!'
   },
-  necrozma: {
-    story: 'Necrozma es un Ultraente legendario proveniente de un mundo al que le fue arrebatada toda la luz. Viaja por las dimensiones buscando fuentes de energía lumínica para saciar su dolor eterno.',
-    biology: 'Su cuerpo está compuesto por un prisma de cristal negro. Para recuperar su verdadera forma, devora y se fusiona con los legendarios Solgaleo o Lunala.',
+  dragapult: {
+    story: 'Dragapult es el Pokémon Sigilo pseudo-legendario de tipo Dragón/Fantasma de la región de Galar. Antaño habitaba los mares prehistóricos como un Diplocaulus extinto.',
+    biology: 'Lleva a dos pequeños Dreepy alojados en los huecos de sus cuernos en forma de ala delta. En combate, catapult los Dreepy como proyectiles vivientes a velocidad supersónica.',
     trivia: [
-      'Al fusionarse con Solgaleo adopta la forma Necrozma Melena Crepuscular (Sol/Acero).',
-      'Al fusionarse con Lunala adopta la forma Necrozma Alas del Alba (Psíquico/Fantasma).',
-      'Con el Ultranecrostal Z se transforma en Ultra Necrozma, resplandeciendo como un dragón de luz pura de 754 de BST.'
+      'Los Dreepy dentro de sus cuernos adoran ser catapultados a velocidades supersónicas.',
+      'Es el Pokémon insignia del Campeón Lionel (Leon) en Pokémon Espada y Escudo.',
+      'Puede volverse completamente invisible a voluntad para atacar por sorpresa.'
     ],
-    funFact: '¡En su forma Ultra Necrozma, la temperatura de su cuerpo alcanza los 6,000°C e irradia luz a todo el Ultraespacio!'
+    funFact: '¡Dispara a sus propios Dreepy como misiles vivientes desde la cabeza a más de Mach 1, y a los Dreepy les encanta!'
   },
-  solgaleo: {
-    story: 'Solgaleo es conocido como el "Heraldo del Sol" y devorador del astro rey. Es el Pokémon Legendario patrón de la región de Alola y evolución final de Cosmog.',
-    biology: 'Su cuerpo alberga una cantidad desbordante de energía solar. Cuando libera su poder, su melena brilla intensamente como la superficie del sol.',
+  baxcalibur: {
+    story: 'Baxcalibur es el Pokémon Dragón Hielo pseudo-legendario de la región de Paldea (Gen 9). Es célebre por su abrumadora fuerza física y la gran hoja de hielo en su espalda.',
+    biology: 'Evoluciona de Arctibax al nivel 54. Absorbe el calor de su entorno para congelarlo e imbuir la espada de hielo de su lomo con temperaturas bajo cero.',
     trivia: [
-      'Su ataque característico es Meteoro Impacto (Sunsteel Strike), de tipo Acero.',
-      'En el anime de Pokémon Sol y Luna, Ash crió a Solgaleo desde que era un pequeño Nebulilla (Cosmog).',
-      'Viaja a través de los Ultraumbrales hacia otras dimensiones del Ultraespacio.'
+      'Su ataque insignia exclusivo es Asalto Espada (Glaive Rush), con 120 de potencia.',
+      'Se arroja de espaldas en el aire para cortar al oponente con la hoja glaciar de su espalda.',
+      'Es el Pokémon insignia del Líder de Gimnasio Hielo y Alto Mando Laurel (Hassel) en Paldea.'
     ],
-    funFact: '¡Su cuerpo brilla con tanta intensidad en la noche que transforma la oscuridad en pleno día!'
+    funFact: '¡Realiza volteretas hacia atrás en pleno combate para caer de espaldas y partir rocas con la espada de su lomo!'
   },
-  lunala: {
-    story: 'Lunala es conocida como la "Heraldo de la Luna" y la criatura que convoca a la noche eterna en Alola.',
-    biology: 'Absorbe la luz continua del ambiente para convertirla en energía oscura. Sus alas extendidas recuerdan al cielo nocturno estrellado.',
+  tyranitar: {
+    story: 'Tyranitar es el Pokémon Coraza pseudo-legendario de tipo Roca/Siniestro de la región de Johto.',
+    biology: 'Su cuerpo está cubierto por una coraza impenetrable. Cuando se enfurece, derrumba montañas enteras y altera la geografía de la región.',
     trivia: [
-      'Su ataque característico es Rayo Umbrío (Moongeist Beam), de tipo Fantasma.',
-      'Junto a Solgaleo, creó los espíritus de los Tapus guardianes de las islas de Alola.',
-      'Es de tipo Psíquico/Fantasma.'
+      'Posee una Megaevolución (Mega Tyranitar) con púas alargadas y mayor fuerza bruta.',
+      'En los videojuegos principales, su habilidad Chorro Arena invoca una tormenta de arena permanente.',
+      'En el anime, es representado como una fuerza de la naturaleza imparable.'
     ],
-    funFact: '¡Al desplegar sus alas de par en par, parece envolver el horizonte en una noche llena de estrellas!'
+    funFact: '¡Es tan fuerte que puede derribar una montaña entera solo para construir su nido!'
   },
-  calyrex: {
-    story: 'Calyrex es el antiguo "Rey de las Cosechas" de la región de Galar. Gobernó las Nieves de la Corona en la antigüedad brindando cosechas abundantes y fertilidad a la tierra.',
-    biology: 'Su enorme corona en la cabeza alberga poderes psíquicos y curativos infinitos. Al montar su corcel legendario usando las Riendas de la Unidad, recupera todo su esplendor regio.',
+  dragonite: {
+    story: 'Dragonite es el legendario Pokémon Dragón pseudo-legendario de Kanto. Posee una naturaleza bondadosa y salva a marineros náufragos.',
+    biology: 'A pesar de su cuerpo robusto, puede volar alrededor del globo terráqueo entero en solo 16 horas a velocidad supersónica.',
     trivia: [
-      'En Pokémon Espada y Escudo (Las Nieves de la Corona), puede montar sobre Glastrier para ser Calyrex Jinete Glacial (Psíquico/Hielo).',
-      'O montar sobre Spectrier para convertirse en Calyrex Jinete Espectral (Psíquico/Fantasma).',
-      'Se comunica por telepatía utilizando el cuerpo del personaje Peony como intérprete.'
+      'Fue el primer Pokémon pseudo-legendario de la historia de la franquicia.',
+      'En el anime, el Dragonite de Ash era conocido por su personalidad afectuosa y sus abrazos gigantes.',
+      'Su inteligencia rivaliza con la de los seres humanos.'
     ],
-    funFact: '¡Un solo toque de sus manos telepáticas puede hacer florecer campos enteros congelados en minutos!'
+    funFact: '¡Existe un mito en el mundo Pokémon sobre una isla secreta habitada únicamente por comunidades de Dragonite!'
   },
-  zacian: {
-    story: 'Zacian es el legendario "Héroe de la Espada" de Galar. En la antigüedad detuvo la catástrofe de la Noche Negra provocada por Eternatus.',
-    biology: 'Al sostener la Espada Oxidada en sus mandíbulas, absorbe la energía de la tierra y se transforma en su Forma Espada Suprema.',
+  goodra: {
+    story: 'Goodra es el Pokémon Dragón de la región de Kalos y Hisui. A pesar de su aspecto imponente, es un Pokémon sumamente afable y cariñoso.',
+    biology: 'Su cuerpo está recubierto de una viscosa capa mucilaginosa que repele los ataques físicos y los proyectiles enemigos.',
     trivia: [
-      'Su ataque característico es Tajo Supremo (Behemoth Blade), una estocada legendaria capaz de cortar el acero como papel.',
-      'En el anime "Pokémon Viajes", Zacian se manifiesta ante Ash Ketchum en el Bosque Corona para guiarlo hacia la batalla final.',
-      'Al transformarse en Espada Suprema, gana el tipo Acero secundario junto a su tipo Hada primario.'
+      'El Goodra de Ash Ketchum en Kalos fue un combatiente clave en la Liga de Luminalia.',
+      'Posee una forma regional en Hisui (Goodra de Hisui) de tipo Dragón/Acero con un caparazón de metal.',
+      'Abraza con entusiasmo a su entrenador dejando su ropa cubierta de mucosidad pegajosa.'
     ],
-    funFact: '¡Su espada es tan afilada que puede hendir montañas enteras con una sola estocada limpia!'
+    funFact: '¡Un puñetazo de Goodra equivale a la fuerza de impacto de cien boxeadores profesionales juntos!'
   },
-  zamazenta: {
-    story: 'Zamazenta es el legendario "Héroe del Escudo" de Galar. Junto a Zacian, protegió a la humanidad del colapso energético de la Noche Negra.',
-    biology: 'Al equipar el Escudo Oxidado, su pelaje frontal se convierte en una coraza dorada impenetrable capaz de repeler cualquier ataque.',
+  kommoo: {
+    story: 'Kommo-o es el Pokémon Escamas pseudo-legendario de tipo Dragón/Lucha de la región de Alola.',
+    biology: 'Sus escamas metálicas resplandecen como una armadura dorada. Hace resonar las escamas de su cola para intimidar a los rivales con un estruendo metálico.',
     trivia: [
-      'Su ataque distintivo es Embate Supremo (Behemoth Bash), de tipo Acero.',
-      'Al adoptar la Forma Escudo Supremo, su tipo evoluciona de Lucha puro a Lucha/Acero.',
-      'En la serie animada de Pokémon, lucha codo a codo con Goh en la batalla final.'
+      'Su movimiento característico es Fragor Escamas (Clanging Scales) y su Movimiento Z "Estruendo Implacable".',
+      'Se somete a un entrenamiento riguroso en las cavernas lejanas de Poni.',
+      'Defiende a los Jangmo-o jóvenes sin importar el peligro.'
     ],
-    funFact: '¡Su escudo frontal puede soportar la explosión simultánea de mil bombas sin ceder un milímetro!'
+    funFact: '¡Hace sonar las escamas de su cola como maracas metálicas para advertir a los intrusos antes de atacar!'
   },
-  eternatus: {
-    story: 'Eternatus es un Pokémon legendario de origen extraterrestre que llegó a la Tierra dentro de un meteorito hace 20,000 años. Es la fuente de toda la energía Dinamax en Galar.',
-    biology: 'Su cuerpo esquelético gigante absorbe y proyecta partículas de energía cósmica. En su forma Eternamax, adopta la apariencia de una mano estelar gigante.',
+  gyarados: {
+    story: 'Gyarados es el Pokémon Atroz de tipo Agua/Volador de Kanto. Es célebre por evolucionar del débil e inofensivo Magikarp a través de una ira descontrolada.',
+    biology: 'Sus neuronas cerebrales mutan drásticamente durante la evolución, imbuyéndolo de una furia destructiva capaz de arrasar ciudades enteras.',
     trivia: [
-      'En su forma Eternamax posee la suma de estadísticas base más alta de toda la historia de Pokémon (1125 BST).',
-      'Sus movimientos característicos son Cañón Dinamax y Rayo Infinito.',
-      'Fue capturado y sellado en la Pokédex de Goh en el anime.'
+      'Su variante variocolor es el famoso Gyarados Rojo del Lago de la Furia en Pokémon Oro y Plata.',
+      'Posee una Megaevolución (Mega Gyarados) de tipo Agua/Siniestro.',
+      'En la mitología oriental, representa la carpa que ascendió la cascada y se convirtió en dragón.'
     ],
-    funFact: '¡Toda la energía que permite a los Pokémon hacerse gigantes en Galar proviene del núcleo de Eternatus!'
+    funFact: '¡Una vez que entra en furia destructiva, no se calma hasta haber arrasado todo a su alrededor!'
   },
-  charizard: {
-    story: 'Charizard es el icónico Pokémon Llama de Kanto. Es famoso en la franquicia por ser el indomable y leal compañero de Ash Ketchum en el anime original.',
-    biology: 'Vuela alto por los cielos buscando rivales poderosos. La llama en la punta de su cola refleja su estado de ánimo y fuerza vital.',
+  snorlax: {
+    story: 'Snorlax es el Pokémon Dormilón de tipo Normal de Kanto. Pasa la gran mayoría de su vida durmiendo placenteramente en medio de los caminos.',
+    biology: 'Necesita ingerir más de 400 kilogramos de comida al día para estar satisfecho. Los jugos gástricos de su estómago pueden digerir incluso comida podrida o veneno.',
     trivia: [
-      'Es uno de los pocos Pokémon con dos Megaevoluciones distintas: Mega Charizard X y Mega Charizard Y.',
-      'En el anime original, derrotó al legendario Articuno de Noland en la Fábrica de la Batalla.',
-      'Es el Pokémon estrella del Campeón Lionel (Leon).'
+      'En los juegos originales de Kanto, bloqueaba las rutas 12 y 16 y requería la Poké Flauta para despertar.',
+      'El Snorlax de Ash Ketchum era un combatiente fenomenal en la Liga Naranja y frente al Frente de Batalla.',
+      'Posee un movimiento Z exclusivo llamado "Pulverizadora de Cien Millones de Voltios" y una forma Gigamax.'
     ],
-    funFact: '¡Su aliento de fuego alcanza temperaturas capaces de derretir glaciares y grandes rocas!'
+    funFact: '¡Su estómago es tan resistente que los jugos gástricos pueden disolver cualquier tipo de veneno o toxina sin enfermarse!'
   },
-  blastoise: {
-    story: 'Blastoise es el Pokémon Marisquero de Kanto. Lanza chorros de agua a alta presión desde los cañones de su caparazón.',
-    biology: 'Su pesado caparazón soporta el inmenso retroceso de sus cañones de agua, los cuales pueden perforar planchas de acero.',
+  arcanine: {
+    story: 'Arcanine es el Pokémon Legendario de tipo Fuego de la región de Kanto. En la cultura oriental del mundo Pokémon, es admirado por su belleza, majestuosidad y lealtad.',
+    biology: 'Es capaz de correr más de 10,000 kilómetros en un solo día y noche sin mostrar signos de fatiga, impulsado por una llama interna ardiente.',
     trivia: [
-      'En el anime, el Squirtle de Ash lideraba el famoso "Escuadrón Squirtle".',
-      'En su forma Gigamax en Galar, su caparazón se convierte en un buque de guerra con 31 cañones.',
-      'Es el Pokémon insignia de Gary Oak.'
+      'En la Pokédex original está categorizado literalmente como "Pokémon Legendario".',
+      'Posee una forma regional en Hisui de tipo Fuego/Roca con pelaje de ceniza volcánica.',
+      'Su rugido transmite una dignidad regia que hace arrodillar a los Pokémon salvajes.'
     ],
-    funFact: '¡Los cañones de agua de Blastoise son tan precisos que pueden acertar a una lata a 50 metros!'
+    funFact: '¡Puede recorrer 10,000 kilómetros en 24 horas corriendo a una velocidad y gracia deslumbrantes!'
   },
-  venusaur: {
-    story: 'Venusaur es el Pokémon Semilla de Kanto. La enorme flor de su lomo absorbe los rayos solares para ganar energía.',
-    biology: 'El aroma que despide su flor florecida calma las emociones de las personas y mitiga la agresividad de otros Pokémon.',
+  gardevoir: {
+    story: 'Gardevoir es el Pokémon Envolvente de tipo Psíquico/Hada de Hoenn. Es famoso por la lealtad absoluta que profesa hacia su entrenador.',
+    biology: 'Posee la habilidad psíquica de contemplar el futuro. Si su entrenador se encuentra en peligro mortal, emplea toda su energía psíquica para invocar un pequeño agujero negro.',
     trivia: [
-      'En el anime, el Bulbasaur de Ash fue el guardián de los Pokémon heridos.',
-      'Su flor se vuelve más colorida y perfumada cuanto más sol absorbe.',
-      'Posee una Megaevolución que aumenta drásticamente sus defensas.'
+      'Es el Pokémon estrella de la Campeona Dianta (Diantha) en la región de Kalos.',
+      'Posee una Megaevolución (Mega Gardevoir) equipada con un vestido blanco de alta gala.',
+      'Su cuerno pectoral rojo es el órgano con el que percibe las emociones humanas.'
     ],
-    funFact: '¡En los días soleados, el aroma de su flor llena todo el bosque y atrae a cientos de Butterfree!'
+    funFact: '¡Es capaz de desplegar su poder psíquico al límite e invocar un agujero negro en miniatura para proteger a su entrenador!'
   },
-  pikachu: {
-    story: 'Pikachu es el ratón eléctrico mundialmente famoso y la mascota principal de Pokémon. Es el compañero inseparable de Ash Ketchum.',
-    biology: 'Almacena energía eléctrica en las bolsas rojas de sus mejillas. Libera descargas eléctricas por la cola cuando se siente amenazado.',
+  gallade: {
+    story: 'Gallade es el Pokémon Cuchilla de tipo Psíquico/Lucha de Sinnoh, evolución alternativa masculina de Kirlia mediante una Piedra Alba.',
+    biology: 'Sus codos se extienden como espadas filosas en combate. Es un maestro del esgrima que lucha con el honor de un caballero medioval.',
     trivia: [
-      'En el anime, rehusó entrar a su Pokébola desde el primer episodio.',
-      'Posee un movimiento Z exclusivo llamado "Gigavoltio Destructor" y forma Gigamax.',
-      'Cuando varios Pikachu se reúnen, sus cargas eléctricas combinadas provocan tormentas.'
+      'Posee una Megaevolución (Mega Gallade) provista de una capa blanca rígida.',
+      'Puede presentir las intenciones del enemigo antes de que lance su ataque.',
+      'Protege ferozmente a los Kirlia y Ralts de su grupo.'
     ],
-    funFact: '¡Usa pequeñas descargas eléctricas para chuscar y tostar las bayas duras antes de comerlas!'
+    funFact: '¡Extiende las cuchillas de sus codos para combatir con la precisión técnica de un maestro esgrimista!'
   },
-  mewtwo: {
-    story: 'Mewtwo es la creación científica definitiva de Isla Cayo. Fue clonado genéticamente a partir del ADN de Mew para ser el luchador supremo.',
-    biology: 'Su mente psíquica le permite levitar, comunicarse por telepatía y manifestar barreras de energía indestructibles.',
+  mimikyu: {
+    story: 'Mimikyu es el Pokémon Disfraz de tipo Fantasma/Hada de la región de Alola.',
+    biology: 'Su verdadera apariencia es tan aterradora que se dice que quien la mira sufre una enfermedad mortal. Por ello, confecciona un disfraz de Pikachu con un trapo viejo para intentar hacer amigos.',
     trivia: [
-      'Protagonizó la primera película de cine de Pokémon "Mewtwo vs. Mew" (1998).',
-      'Cuenta con dos Megaevoluciones: Mega Mewtwo X y Mega Mewtwo Y.',
-      'En los videojuegos originales, habitaba en el fondo de la Cueva Celeste.'
+      'En el anime de Pokémon Sol y Luna, un Mimikyu salvaje odiaba profundamente a Pikachu y se unió al Equipo Rocket.',
+      'Su habilidad Disfraz le permite recibir el primer golpe sin sufrir daño.',
+      'El trapo de su disfraz se rompe cuando recibe un impacto directo.'
     ],
-    funFact: 'Descansa en trance meditativo dentro de cavernas oscuras para preservar su energía psíquica.'
+    funFact: '¡Diseñó su disfraz imitando a Pikachu porque vio la popularidad de Pikachu y deseaba con todo su corazón ser amado por los humanos!'
   },
-  mew: {
-    story: 'Mew es el Pokémon Mítico ancestral que posee el código genético de todos los Pokémon existentes. Es el ancestro de la vida Pokémon.',
-    biology: 'Es capaz de volverse invisible a voluntad y posee la habilidad de aprender cualquier movimiento existente.',
+  urshifu: {
+    story: 'Urshifu es el Pokémon Maestro Marcial legendario de la Isla de la Armadura en Galar. Evoluciona del pequeño Kubfu al completar el desafío de las Torres de los Dos Puños.',
+    biology: 'Según la torre elegida, adopta el Estilo Brusco (Lucha/Siniestro) asestando golpes devastadores de un solo impacto, o el Estilo Fluido (Lucha/Agua) ejecutando ráfagas continuas como olas incesantes.',
     trivia: [
-      'Fue creado por el programador Shigeki Morimoto como un secreto en el código de Pokémon Rojo y Verde.',
-      'En la película "Mewtwo vs. Mew", demostró un poder infinito pero una naturaleza juguetona.',
-      'Puede transformarse en cualquier otro Pokémon.'
+      'Su ataque característico en Estilo Brusco es Golpe Oscuro (Wicked Blow), que siempre asesta un golpe crítico.',
+      'En Estilo Fluido su ataque es Azote Torrencial (Surging Strikes), asestando 3 golpes críticos consecutivos.',
+      'Cada estilo posee su propia forma Gigamax exclusiva.'
     ],
-    funFact: '¡Se dice que solo se muestra ante personas que poseen un corazón puro e inocente!'
+    funFact: '¡Sus ataques en cualquier estilo atraviesan completamente cualquier movimiento de protección como Protección o Detección!'
   },
-  rayquaza: {
-    story: 'Rayquaza es el guardián de la capa de ozono del planeta y líder del trío creador de Hoenn junto a Groudon y Kyogre.',
-    biology: 'Habita en la estratosfera y desciende únicamente cuando Groudon y Kyogre despiertan para detener su combate.',
+  ceruledge: {
+    story: 'Ceruledge es el Pokémon Pirocuchilla de tipo Fuego/Fantasma de Paldea (Gen 9). Evoluciona de Charcadet al equipar la Armadura Maliciosa.',
+    biology: 'Empuña dos espadas compuestas de fuego fantasmal que absorben la energía vital de las heridas de sus enemigos en combate.',
     trivia: [
-      'Fue el primer Pokémon en poder Megaevolucionar mediante un movimiento aprendido (Ascenso Draco).',
-      'En la película "El Destino de Deoxys", combatió contra Deoxys en los límites del espacio.',
-      'Su variante variocolor es de color negro azabache.'
+      'Su ataque característico exclusivo es Espada Lamento (Bitter Blade), que restaura PS iguales a la mitad del daño causado.',
+      'Es el Pokémon insignia del Campeón y miembro del Alto Mando en Paldea.',
+      'Lucha en silencio impulsado por los rencores acumulados en su armadura.'
     ],
-    funFact: '¡Jamás toca la tierra! Pasa siglos flotando en la estratosfera alimentándose de meteoritos.'
+    funFact: '¡Las cuchillas de sus brazos arden con llamas del inframundo que curan sus propias heridas al cortar al oponente!'
   },
-  groudon: {
-    story: 'Groudon es el Pokémon Continental legendario que personifica la tierra firme. En la mitología de Hoenn, elevó los continentes.',
-    biology: 'Al acceder a su Regresión Primigenia, imbuye su cuerpo de magma ardiente de tipo Tierra/Fuego.',
+  armarouge: {
+    story: 'Armarouge es el Pokémon Guerrero de tipo Fuego/Psíquico de Paldea. Evoluciona de Charcadet al vestir la Armadura Auspiciosa.',
+    biology: 'Junta las piezas de su armadura de hombros para formar un cañón de energía psíquica e incandescente.',
     trivia: [
-      'Su ataque característico es Filo del Abismo.',
-      'Su habilidad Chorro Arena invoca un sol abrasador permanente.',
-      'Duerme en pozos de magma subterráneos.'
+      'Su ataque característico es Cañón Armadura (Armor Cannon), de 120 de potencia de fuego.',
+      'Basa su estilo de combate en la lealtad, el honor y el disparo a larga distancia.',
+      'La armadura que viste perteneció a un héroe legendario de Paldea.'
     ],
-    funFact: 'Duerme plácidamente en pozos de magma subterráneos bajo el manto terrestre.'
+    funFact: '¡Transforma las hombreras de su armadura dorada en un cañón blaster que dispara bolas de fuego psíquico!'
   },
-  kyogre: {
-    story: 'Kyogre es el Pokémon Cuenca legendario que personifica los océanos. Expandió los mares del mundo antiguo provocando lluvias.',
-    biology: 'En su Regresión Primigenia, su cuerpo se vuelve translúcido revelando un núcleo de energía oceánica pura.',
+  terapagos: {
+    story: 'Terapagos es el legendario Pokémon Teracristal originario del Área Cero de Paldea. Es el origen primigenio de toda la Teracristalización.',
+    biology: 'Su caparazón contiene los 18 tipos elementales existentes. En su Forma Astral o Teracristal, despliega un caparazón cósmico deslumbrante.',
     trivia: [
-      'Su movimiento característico es Origen Primigenio.',
-      'Altera el clima del planeta entero provocando lluvias torrenciales.',
-      'Salvó a las civilizaciones antiguas de las sequías.'
+      'Es el protagonista del contenido descargable "El Disco Índigo" en Pokémon Escarlata y Púrpura.',
+      'Su habilidad Teraformación Cero elimina todos los efectos del clima y terrenos al saltar al combate.',
+      'Su ataque insignia es Astro Tera (Tera Starstorm).'
     ],
-    funFact: '¡Su cuerpo gigante puede nadar en las profundidades marinas más oscuras sin sentir presión!'
-  },
-  giratina: {
-    story: 'Giratina es el Pokémon Legendario de Sinnoh desterrado al Mundo Distorsión por su naturaleza violenta.',
-    biology: 'En el Mundo Distorsión adopta su Forma Origen sin patas. En el mundo real adopta la Forma Modificada de seis patas.',
-    trivia: [
-      'Su movimiento característico es Golpe Umbrío.',
-      'Es el tercer integrante del Trío de la Creación de Sinnoh junto a Dialga y Palkia.',
-      'En Pokémon Platino, arrastra al antagonista Helio al Mundo Distorsión.'
-    ],
-    funFact: '¡En su mundo de origen, la gravedad no existe y el agua fluye hacia el cielo!'
-  },
-  lucario: {
-    story: 'Lucario es el Pokémon Aura de tipo Lucha/Acero de Sinnoh. Siente el aura espiritual de todos los seres vivos a kilómetros.',
-    biology: 'Lee los pensamientos y emociones de sus rivales para anticipar sus movimientos en combate.',
-    trivia: [
-      'Fue el protagonista de la película "Lucario y el Misterio de Mew".',
-      'Su ataque característico Esfera Aural nunca falla el blanco.',
-      'Fue un miembro clave del equipo campeón de Ash Ketchum.'
-    ],
-    funFact: '¡Puede detectar la presencia de una persona a más de un kilómetro de distancia mediante su aura!'
-  },
-  greninja: {
-    story: 'Greninja es el Pokémon Ninja de Kalos. Es uno de los Pokémon más populares de la historia.',
-    biology: 'Crea shurikens de agua comprimida capaces de cortar el acero. Se mueve en silencio absoluto.',
-    trivia: [
-      'Formó con Ash Ketchum la transformación única "Greninja de Ash".',
-      'Fue votado como el Pokémon #1 más popular del mundo en 2020.',
-      'Su lengua le sirve como bufanda táctica en combate.'
-    ],
-    funFact: '¡Comprime el agua hasta hacerla tan dura que puede partir rocas por la mitad!'
+    funFact: '¡Su caparazón encierra los 18 elementos del universo Pokémon dentro de una gema teracristal perfecta!'
   }
 };
 
