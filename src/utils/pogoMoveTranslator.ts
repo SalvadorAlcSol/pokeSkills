@@ -302,3 +302,17 @@ export function getSpanishMoveName(englishMoveName: string): string {
 export function getTranslatedMoveName(englishMoveName: string, lang?: string): string {
   return getSpanishMoveName(englishMoveName);
 }
+
+export function getEnglishMoveName(spanishOrEnglishMoveName: string): string {
+  if (!spanishOrEnglishMoveName) return '';
+  const trimmed = spanishOrEnglishMoveName.trim().toLowerCase();
+  
+  // Reverse lookup in SPANISH_MOVE_DICTIONARY
+  const entry = Object.entries(SPANISH_MOVE_DICTIONARY).find(
+    ([eng, esp]) => eng.toLowerCase() === trimmed || esp.toLowerCase() === trimmed
+  );
+  if (entry) {
+    return entry[0];
+  }
+  return spanishOrEnglishMoveName;
+}

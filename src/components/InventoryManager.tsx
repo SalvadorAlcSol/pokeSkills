@@ -26,7 +26,9 @@ import {
   ArrowUp,
   ArrowDown,
   Info,
+  Image,
 } from 'lucide-react';
+import { ScreenshotScanner } from './ScreenshotScanner';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import {
   getSpecialFormSpriteUrl,
@@ -56,7 +58,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
   const [sortBy, setSortBy] = useState<'cp' | 'pokedex' | 'hp' | 'date'>('cp');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importTab, setImportTab] = useState<'video' | 'csv'>('video');
+  const [importTab, setImportTab] = useState<'video' | 'images' | 'csv'>('images');
 
   // Track editing pokemon
   const [editingPokemon, setEditingPokemon] = useState<UserPokemon | null>(null);
@@ -484,32 +486,47 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
             {/* Import Tab Switcher */}
             <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl mb-6 border border-slate-200">
               <button
+                onClick={() => setImportTab('images')}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  importTab === 'images'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Image className="w-4 h-4" />
+                <span>📸 Capturas con IA</span>
+              </button>
+              <button
                 onClick={() => setImportTab('video')}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                   importTab === 'video'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Video className="w-4 h-4" />
-                Escáner de Video de Pantalla
+                <span>Escáner de Video</span>
               </button>
               <button
                 onClick={() => setImportTab('csv')}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                   importTab === 'csv'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                Importar CSV PokeGenie / CalcyIV
+                <span>Importar CSV</span>
               </button>
             </div>
 
-            {importTab === 'video' ? (
+            {importTab === 'images' && (
+              <ScreenshotScanner onComplete={() => setShowImportModal(false)} />
+            )}
+            {importTab === 'video' && (
               <VideoScanner onComplete={() => setShowImportModal(false)} />
-            ) : (
+            )}
+            {importTab === 'csv' && (
               <PokeGenieImporter onComplete={() => setShowImportModal(false)} />
             )}
           </div>
