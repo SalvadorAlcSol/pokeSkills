@@ -19,7 +19,8 @@ const HEADER_MAPPINGS: Record<string, string[]> = {
   fastMove: ['fast move', 'ataque rapido', 'movimiento rapido', 'fast', 'fastmove', 'ataque rápido', 'movimiento rápido', 'quick move', 'ataque_rapido'],
   chargedMove1: ['charge move', 'charge move 1', 'ataque cargado', 'ataque cargado 1', 'charged 1', 'specialmove', 'charged move 1', 'charged move', 'ataque_cargado_1'],
   chargedMove2: ['charge move 2', 'ataque cargado 2', 'charged 2', 'specialmove2', 'charged move 2', 'ataque_cargado_2'],
-  form: ['form', 'forma', 'variant', 'forma id', 'variante']
+  form: ['form', 'forma', 'variant', 'forma id', 'variante'],
+  shiny: ['shiny', 'is shiny', 'variocolor', 'es variocolor', 'es_variocolor', 'isshiny', 'brillante']
 };
 
 interface ColumnMapping {
@@ -33,6 +34,7 @@ interface ColumnMapping {
   chargedMove1: string;
   chargedMove2: string;
   form: string;
+  shiny: string;
 }
 
 interface PokeGenieImporterProps {
@@ -51,7 +53,7 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<any[]>([]);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
-    name: '', cp: '', level: '', ivAtk: '', ivDef: '', ivHp: '', fastMove: '', chargedMove1: '', chargedMove2: '', form: ''
+    name: '', cp: '', level: '', ivAtk: '', ivDef: '', ivHp: '', fastMove: '', chargedMove1: '', chargedMove2: '', form: '', shiny: ''
   });
   const [showMappingPanel, setShowMappingPanel] = useState<boolean>(false);
   const [parsedPreviewList, setParsedPreviewList] = useState<Omit<UserPokemon, 'id' | 'addedAt'>[]>([]);
@@ -87,7 +89,8 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
       fastMove: findMatchingHeader('fastMove', headers),
       chargedMove1: findMatchingHeader('chargedMove1', headers),
       chargedMove2: findMatchingHeader('chargedMove2', headers),
-      form: findMatchingHeader('form', headers)
+      form: findMatchingHeader('form', headers),
+      shiny: findMatchingHeader('shiny', headers)
     };
 
     setColumnMapping(newMapping);
@@ -154,9 +157,14 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
 
     const shadowForm = ['shadow', 'oscuro', 's'].includes(form.toLowerCase()) || rawName.toLowerCase().includes('shadow') || rawName.toLowerCase().includes('oscuro');
     const purifiedForm = ['purified', 'purificado'].includes(form.toLowerCase()) || rawName.toLowerCase().includes('purified') || rawName.toLowerCase().includes('purificado');
+    const rawShiny = getValue('shiny');
+    const isShiny = ['true', '1', 'yes', 'si', 'shiny', 'variocolor', 's'].includes(rawShiny.toLowerCase()) ||
+      form.toLowerCase().includes('shiny') ||
+      rawName.toLowerCase().includes('shiny') ||
+      rawName.toLowerCase().includes('variocolor');
 
-    // Clean shadow/purified tags from name
-    rawName = rawName.replace(/shadow|oscuro|purified|purificado/gi, '').trim();
+    // Clean shadow/purified/shiny tags from name
+    rawName = rawName.replace(/shadow|oscuro|purified|purificado|shiny|variocolor/gi, '').trim();
 
     const resolved = resolvePogoSpeciesAndForm(rawName, form);
 
@@ -183,6 +191,7 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
       chargedMove2: finalCharged2 || undefined,
       isShadow: shadowForm,
       isPurified: purifiedForm,
+      isShiny,
       isFavorite: false,
     };
   };
@@ -457,6 +466,17 @@ Dragonite,3792,40,15,14,15,Dragon Tail,Outrage,,Normal`;
                     {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Shiny / Variocolor</label>
+                  <select
+                    value={columnMapping.shiny}
+                    onChange={(e) => handleMappingChange('shiny', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold outline-none focus:border-purple-600"
+                  >
+                    <option value="">-- No mapeado --</option>
+                    {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
               </div>
             )}
           </div>
@@ -479,9 +499,11 @@ Dragonite,3792,40,15,14,15,Dragon Tail,Outrage,,Normal`;
                   {parsedPreviewList.map((poke, index) => (
                     <tr key={index} className="hover:bg-slate-50/50">
                       <td className="p-3">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-slate-900 font-black">{poke.name}</span>
                           {poke.isShadow && <span className="bg-purple-100 text-purple-700 border border-purple-200 text-[8px] px-1.5 py-0.5 rounded-full font-black">Shadow</span>}
+                          {poke.isPurified && <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[8px] px-1.5 py-0.5 rounded-full font-black">Purificado</span>}
+                          {poke.isShiny && <span className="bg-amber-100 text-amber-800 border border-amber-200 text-[8px] px-1.5 py-0.5 rounded-full font-black">🌟 Variocolor</span>}
                         </div>
                       </td>
                       <td className="p-3 text-slate-950 font-black">CP {poke.cp}</td>

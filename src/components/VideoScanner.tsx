@@ -110,7 +110,8 @@ export const VideoScanner: React.FC = () => {
       chargedMove1: p.chargedMove1,
       chargedMove2: p.chargedMove2 || undefined,
       isShadow: p.isShadow,
-      isPurified: false,
+      isPurified: p.isPurified || false,
+      isShiny: p.isShiny || false,
       isFavorite: false,
     }));
 
@@ -298,6 +299,8 @@ export const VideoScanner: React.FC = () => {
                     {poke.level !== null && <span className="bg-slate-700 text-white text-xs px-2 py-0.5 rounded-full font-extrabold">Nv.{poke.level}</span>}
                     {poke.ivPercent !== null && <span className="bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-black">{poke.ivPercent}%</span>}
                     {poke.isShadow && <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full font-extrabold">💀 Shadow</span>}
+                    {poke.isPurified && <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">✨ Purificado</span>}
+                    {poke.isShiny && <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-0.5">🌟 Variocolor</span>}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-700 font-bold mt-1">
                     {(() => {

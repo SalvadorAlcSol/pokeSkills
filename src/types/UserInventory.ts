@@ -13,6 +13,7 @@ export interface UserPokemon {
   chargedMove2?: string;
   isShadow: boolean;
   isPurified: boolean;
+  isShiny?: boolean;
   isFavorite: boolean;
   canMegaEvolve?: boolean;
   unlockedMegaForm?: string; // Form ID e.g. 'mega_mewtwo_x', 'mega_mewtwo_y', 'mega_rayquaza', 'primal_kyogre'

@@ -19,6 +19,8 @@ export interface DetectedPokemon {
   ivHp: number | null;
   ivPercent: number | null;
   isShadow: boolean;
+  isPurified: boolean;
+  isShiny: boolean;
   frameIndex: number;
 }
 
@@ -66,7 +68,9 @@ If this IS a Pokémon detail screen, extract ALL visible data as JSON:
   "ivDef": <0-15 if visible from PGSharp overlay, null otherwise>,
   "ivHp": <0-15 if visible from PGSharp overlay, null otherwise>,
   "ivPercent": <0-100 if visible, null otherwise>,
-  "isShadow": <true if purple/dark flames or "Shadow"/"Oscuro" visible, false otherwise>
+  "isShadow": <true if purple/dark flames or "Shadow"/"Oscuro" visible, false otherwise>,
+  "isPurified": <true if white glowing aura/sparkles or "Purified"/"Purificado" visible, false otherwise>,
+  "isShiny": <true if the Pokémon model has shiny coloring/particles, or if the three-sparkles icon is visible next to the name/CP, false otherwise>
 }
 
 If this is NOT a Pokémon detail screen (it's a menu, transition, loading screen, Pokémon list, map, etc.):
@@ -196,8 +200,10 @@ async function analyzeFrame(
     const ivHp = parseNullableNumber(parsed.ivHp);
     const ivPercent = parseNullableNumber(parsed.ivPercent);
     const isShadow = Boolean(parsed.isShadow);
+    const isPurified = Boolean(parsed.isPurified);
+    const isShiny = Boolean(parsed.isShiny);
 
-    console.log(`Frame #${frameIndex} DETECTED:`, { name, cp, level, fastMove, chargedMove1, ivPercent });
+    console.log(`Frame #${frameIndex} DETECTED:`, { name, cp, level, fastMove, chargedMove1, ivPercent, isShiny, isPurified });
 
     return {
       detected: true,
@@ -212,6 +218,8 @@ async function analyzeFrame(
       ivHp,
       ivPercent,
       isShadow,
+      isPurified,
+      isShiny,
       frameIndex,
     };
   } catch (err) {

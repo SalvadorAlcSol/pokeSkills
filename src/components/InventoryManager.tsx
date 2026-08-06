@@ -108,6 +108,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
     if (filterType === 'mega') return Boolean(pokemon.canMegaEvolve);
     if (filterType === 'shadow') return Boolean(pokemon.isShadow);
     if (filterType === 'perfect') return ivPct === 100;
+    if (filterType === 'shiny') return Boolean(pokemon.isShiny);
 
     return true;
   });
@@ -135,6 +136,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
   ).length;
   const megaCount = inventory.filter((p) => p.canMegaEvolve).length;
   const shadowCount = inventory.filter((p) => p.isShadow).length;
+  const shinyCount = inventory.filter((p) => p.isShiny).length;
 
   const toggleMegaSimulation = (pokemonId: string, megaFormId: string) => {
     setSimulatedMegas((prev) => {
@@ -299,6 +301,16 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
               }`}
             >
               🏆 100% Perfectos ({perfectCount})
+            </button>
+            <button
+              onClick={() => setFilterType('shiny')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 ${
+                filterType === 'shiny'
+                  ? 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold shadow-sm'
+                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 font-extrabold'
+              }`}
+            >
+              🌟 Variocolores ({shinyCount})
             </button>
           </div>
 
@@ -685,6 +697,18 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
           </span>
         )}
 
+        {pokemon.isPurified && (
+          <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
+            ✨ Purificado
+          </span>
+        )}
+
+        {pokemon.isShiny && (
+          <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-xl font-black shadow-2xs flex items-center gap-0.5">
+            🌟 Variocolor
+          </span>
+        )}
+
         {activeMegaForm && (
           <span className="text-[10px] bg-pink-600 text-white px-2.5 py-0.5 rounded-full font-extrabold shadow-xs">
             ⚡ Mega Simulación
@@ -717,6 +741,8 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
         <div className="flex-1 min-w-0">
           <h3 className="font-extrabold text-slate-900 text-lg truncate tracking-tight flex items-center gap-1.5">
             {pokemon.isShadow && <span title="Pokémon Oscuro">💀</span>}
+            {pokemon.isPurified && <span title="Pokémon Purificado">✨</span>}
+            {pokemon.isShiny && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" title="Pokémon Variocolor" />}
             {displayName}
           </h3>
 
