@@ -18,7 +18,12 @@ function getValidMovesForSpecies(speciesName: string) {
 
 type ScanPhase = 'idle' | 'extracting' | 'analyzing' | 'preview' | 'done' | 'error';
 
-export const VideoScanner: React.FC = () => {
+interface VideoScannerProps {
+  onComplete?: () => void;
+  importMode?: 'merge' | 'overwrite' | 'append';
+}
+
+export const VideoScanner: React.FC<VideoScannerProps> = ({ onComplete, importMode = 'merge' as const }) => {
   const [phase, setPhase] = useState<ScanPhase>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -115,7 +120,7 @@ export const VideoScanner: React.FC = () => {
       isFavorite: false,
     }));
 
-    importPokemons(pokemonsToImport);
+    importPokemons(pokemonsToImport, importMode);
     setPhase('done');
     setStatusMessage(`¡${pokemonsToImport.length} Pokémon importados exitosamente a tu Caja!`);
   };

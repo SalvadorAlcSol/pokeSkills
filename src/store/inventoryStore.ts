@@ -10,7 +10,10 @@ interface InventoryState {
   addPokemon: (pokemon: Omit<UserPokemon, 'id' | 'addedAt'>) => void;
   updatePokemon: (id: string, updates: Partial<UserPokemon>) => void;
   removePokemon: (id: string) => void;
-  importPokemons: (pokemons: Omit<UserPokemon, 'id' | 'addedAt'>[]) => void;
+  importPokemons: (
+    pokemons: Omit<UserPokemon, 'id' | 'addedAt'>[],
+    mode?: 'merge' | 'overwrite' | 'append'
+  ) => void;
   clearInventory: () => void;
   syncFromCloud: () => Promise<{ success: boolean; count: number; message: string }>;
   syncToCloud: () => Promise<{ success: boolean; count: number; message: string }>;
@@ -79,7 +82,95 @@ export const useInventoryStore = create<InventoryState>()(
         }
       },
 
-      importPokemons: (pokemons) => {
+      importPokemons: (pokemons, mode = 'merge') => {
+        const currentInventory = [...get().inventory];
+
+        if (mode === 'overwrite') {
+          // Clear inventory locally and from Supabase first
+          if (isSupabaseConfigured && supabase) {
+            supabase
+              .from('pokemon_inventory')
+              .delete()
+              .neq('id', '0')
+              .then(({ error }) => {
+                if (error) console.warn('Supabase overwrite clear info:', error.message);
+              });
+          }
+
+          const freshPokemons = pokemons.map(p => ({
+            ...p,
+            id: uuidv4(),
+            addedAt: Date.now(),
+          }));
+
+          set({ inventory: freshPokemons });
+
+          if (isSupabaseConfigured && supabase && freshPokemons.length > 0) {
+            const rows = freshPokemons.map(p => ({ id: p.id, data: p, updated_at: new Date() }));
+            supabase
+              .from('pokemon_inventory')
+              .upsert(rows)
+              .then(({ error }) => {
+                if (error) console.warn('Supabase sync overwrite import info:', error.message);
+              });
+          }
+          return;
+        }
+
+        if (mode === 'merge') {
+          const updatedInventory = [...currentInventory];
+          const upsertRows: any[] = [];
+
+          for (const p of pokemons) {
+            // Check if there is an existing Pokémon in state.inventory that matches
+            const matchIndex = updatedInventory.findIndex(
+              (exist) =>
+                exist.name.toLowerCase() === p.name.toLowerCase() &&
+                exist.ivAtk === p.ivAtk &&
+                exist.ivDef === p.ivDef &&
+                exist.ivHp === p.ivHp &&
+                Boolean(exist.isShadow) === Boolean(p.isShadow) &&
+                Boolean(exist.isPurified) === Boolean(p.isPurified) &&
+                Boolean(exist.isShiny) === Boolean(p.isShiny)
+            );
+
+            if (matchIndex !== -1) {
+              // Update existing matched Pokémon
+              const existing = updatedInventory[matchIndex];
+              const updatedPoke: UserPokemon = {
+                ...existing,
+                ...p, // overwrite Level, CP, Fast Move, Charged Moves, etc.
+                id: existing.id,
+                addedAt: existing.addedAt // Keep metadata
+              };
+              updatedInventory[matchIndex] = updatedPoke;
+              upsertRows.push({ id: updatedPoke.id, data: updatedPoke, updated_at: new Date() });
+            } else {
+              // Add as new
+              const newPoke: UserPokemon = {
+                ...p,
+                id: uuidv4(),
+                addedAt: Date.now()
+              };
+              updatedInventory.push(newPoke);
+              upsertRows.push({ id: newPoke.id, data: newPoke, updated_at: new Date() });
+            }
+          }
+
+          set({ inventory: updatedInventory });
+
+          if (isSupabaseConfigured && supabase && upsertRows.length > 0) {
+            supabase
+              .from('pokemon_inventory')
+              .upsert(upsertRows)
+              .then(({ error }) => {
+                if (error) console.warn('Supabase sync merge import info:', error.message);
+              });
+          }
+          return;
+        }
+
+        // Default 'append' mode
         const newPokemons = pokemons.map(p => ({
           ...p,
           id: uuidv4(),

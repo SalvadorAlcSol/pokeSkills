@@ -39,9 +39,10 @@ interface ColumnMapping {
 
 interface PokeGenieImporterProps {
   onComplete?: () => void;
+  importMode?: 'merge' | 'overwrite' | 'append';
 }
 
-export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete }) => {
+export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete, importMode = 'merge' as const }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const importPokemons = useInventoryStore(state => state.importPokemons);
@@ -218,7 +219,7 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
         return;
       }
 
-      importPokemons(importedList);
+      importPokemons(importedList, importMode);
       setSuccess(`¡Se importaron ${importedList.length} Pokémon exitosamente a tu Caja!`);
       setError(null);
 

@@ -59,6 +59,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importTab, setImportTab] = useState<'video' | 'images' | 'csv'>('images');
+  const [importMode, setImportMode] = useState<'merge' | 'overwrite' | 'append'>('merge');
 
   // Track editing pokemon
   const [editingPokemon, setEditingPokemon] = useState<UserPokemon | null>(null);
@@ -532,14 +533,62 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
               </button>
             </div>
 
+            {/* Import Mode Selector */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-xs font-sans">
+              <span className="block font-extrabold text-slate-800 mb-2">🔄 Modo de Sincronización:</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImportMode('merge')}
+                  className={`flex-1 py-2 px-2 rounded-xl border text-[11px] font-black transition-all ${
+                    importMode === 'merge'
+                      ? 'bg-purple-100 text-purple-900 border-purple-400 shadow-2xs'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                  title="Actualiza nivel, CP y ataques si el Pokémon ya existe. Evita duplicados."
+                >
+                  🔄 Fusionar y Actualizar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportMode('overwrite')}
+                  className={`flex-1 py-2 px-2 rounded-xl border text-[11px] font-black transition-all ${
+                    importMode === 'overwrite'
+                      ? 'bg-red-50 text-red-900 border-red-300 shadow-2xs'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                  title="Borra la caja actual e importa desde cero."
+                >
+                  🧹 Reemplazar Caja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportMode('append')}
+                  className={`flex-1 py-2 px-2 rounded-xl border text-[11px] font-black transition-all ${
+                    importMode === 'append'
+                      ? 'bg-blue-50 text-blue-900 border-blue-300 shadow-2xs'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                  title="Añade todo directamente como registros nuevos."
+                >
+                  ➕ Conservar Todo
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold mt-2 leading-relaxed">
+                {importMode === 'merge' && '💡 Recomendado: si ya tienes un Mewtwo 15/15/15 a Nvl. 30 y lo importas a Nvl. 40, actualizará el nivel y ataques del original sin duplicarlo.'}
+                {importMode === 'overwrite' && '⚠️ ¡Cuidado! Esto eliminará permanentemente todos los Pokémon actuales de tu caja local y de la nube antes de cargar los nuevos.'}
+                {importMode === 'append' && '📝 Importará todos los registros directamente. Útil si tienes múltiples ejemplares con los mismos IVs.'}
+              </p>
+            </div>
+
             {importTab === 'images' && (
-              <ScreenshotScanner onComplete={() => setShowImportModal(false)} />
+              <ScreenshotScanner onComplete={() => setShowImportModal(false)} importMode={importMode} />
             )}
             {importTab === 'video' && (
-              <VideoScanner onComplete={() => setShowImportModal(false)} />
+              <VideoScanner onComplete={() => setShowImportModal(false)} importMode={importMode} />
             )}
             {importTab === 'csv' && (
-              <PokeGenieImporter onComplete={() => setShowImportModal(false)} />
+              <PokeGenieImporter onComplete={() => setShowImportModal(false)} importMode={importMode} />
             )}
           </div>
         </div>

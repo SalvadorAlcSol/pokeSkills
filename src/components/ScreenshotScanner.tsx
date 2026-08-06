@@ -18,9 +18,10 @@ type ScanPhase = 'idle' | 'reading' | 'analyzing' | 'preview' | 'done' | 'error'
 
 interface ScreenshotScannerProps {
   onComplete?: () => void;
+  importMode?: 'merge' | 'overwrite' | 'append';
 }
 
-export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete }) => {
+export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete, importMode = 'merge' as const }) => {
   const [phase, setPhase] = useState<ScanPhase>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -120,7 +121,7 @@ export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete
       isFavorite: false,
     }));
 
-    importPokemons(pokemonsToImport);
+    importPokemons(pokemonsToImport, importMode);
     setPhase('done');
     setStatusMessage(`¡${pokemonsToImport.length} Pokémon importados a tu Caja!`);
     if (onComplete) {
