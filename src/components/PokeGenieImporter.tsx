@@ -20,7 +20,9 @@ const HEADER_MAPPINGS: Record<string, string[]> = {
   chargedMove1: ['charge move', 'charge move 1', 'ataque cargado', 'ataque cargado 1', 'charged 1', 'specialmove', 'charged move 1', 'charged move', 'ataque_cargado_1'],
   chargedMove2: ['charge move 2', 'ataque cargado 2', 'charged 2', 'specialmove2', 'charged move 2', 'ataque_cargado_2'],
   form: ['form', 'forma', 'variant', 'forma id', 'variante'],
-  shiny: ['shiny', 'is shiny', 'variocolor', 'es variocolor', 'es_variocolor', 'isshiny', 'brillante']
+  shiny: ['shiny', 'is shiny', 'variocolor', 'es variocolor', 'es_variocolor', 'isshiny', 'brillante'],
+  caughtDate: ['caught', 'caught date', 'caught_date', 'date', 'fecha', 'fecha captura', 'fecha_captura', 'capturado'],
+  caughtLocation: ['location', 'caught location', 'caught_location', 'lugar', 'lugar de captura', 'ubicacion', 'ubicación']
 };
 
 interface ColumnMapping {
@@ -35,14 +37,17 @@ interface ColumnMapping {
   chargedMove2: string;
   form: string;
   shiny: string;
+  caughtDate: string;
+  caughtLocation: string;
 }
 
 interface PokeGenieImporterProps {
   onComplete?: () => void;
   importMode?: 'merge' | 'overwrite' | 'append';
+  onImportRequest?: (list: Omit<UserPokemon, 'id' | 'addedAt'>[]) => void;
 }
 
-export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete, importMode = 'merge' as const }) => {
+export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete, importMode = 'merge' as const, onImportRequest }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const importPokemons = useInventoryStore(state => state.importPokemons);
@@ -54,7 +59,7 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<any[]>([]);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
-    name: '', cp: '', level: '', ivAtk: '', ivDef: '', ivHp: '', fastMove: '', chargedMove1: '', chargedMove2: '', form: '', shiny: ''
+    name: '', cp: '', level: '', ivAtk: '', ivDef: '', ivHp: '', fastMove: '', chargedMove1: '', chargedMove2: '', form: '', shiny: '', caughtDate: '', caughtLocation: ''
   });
   const [showMappingPanel, setShowMappingPanel] = useState<boolean>(false);
   const [parsedPreviewList, setParsedPreviewList] = useState<Omit<UserPokemon, 'id' | 'addedAt'>[]>([]);
@@ -91,7 +96,9 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
       chargedMove1: findMatchingHeader('chargedMove1', headers),
       chargedMove2: findMatchingHeader('chargedMove2', headers),
       form: findMatchingHeader('form', headers),
-      shiny: findMatchingHeader('shiny', headers)
+      shiny: findMatchingHeader('shiny', headers),
+      caughtDate: findMatchingHeader('caughtDate', headers),
+      caughtLocation: findMatchingHeader('caughtLocation', headers)
     };
 
     setColumnMapping(newMapping);
@@ -179,6 +186,9 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
       ivHp
     );
 
+    const caughtDate = getValue('caughtDate');
+    const caughtLocation = getValue('caughtLocation');
+
     return {
       speciesId: resolved.speciesId,
       name: resolved.displayName,
@@ -193,6 +203,8 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
       isShadow: shadowForm,
       isPurified: purifiedForm,
       isShiny,
+      caughtDate: caughtDate || undefined,
+      caughtLocation: caughtLocation || undefined,
       isFavorite: false,
     };
   };
@@ -219,14 +231,18 @@ export const PokeGenieImporter: React.FC<PokeGenieImporterProps> = ({ onComplete
         return;
       }
 
-      importPokemons(importedList, importMode);
-      setSuccess(`¡Se importaron ${importedList.length} Pokémon exitosamente a tu Caja!`);
-      setError(null);
+      if (onImportRequest) {
+        onImportRequest(importedList);
+      } else {
+        importPokemons(importedList, importMode);
+        setSuccess(`¡Se importaron ${importedList.length} Pokémon exitosamente a tu Caja!`);
+        setError(null);
 
-      // Clean parser states
-      setTimeout(() => {
-        if (onComplete) onComplete();
-      }, 1500);
+        // Clean parser states
+        setTimeout(() => {
+          if (onComplete) onComplete();
+        }, 1500);
+      }
     } catch (err: any) {
       setError(`Error al importar: ${err.message}`);
     }
@@ -472,6 +488,28 @@ Dragonite,3792,40,15,14,15,Dragon Tail,Outrage,,Normal`;
                   <select
                     value={columnMapping.shiny}
                     onChange={(e) => handleMappingChange('shiny', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold outline-none focus:border-purple-600"
+                  >
+                    <option value="">-- No mapeado --</option>
+                    {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Fecha de Captura</label>
+                  <select
+                    value={columnMapping.caughtDate}
+                    onChange={(e) => handleMappingChange('caughtDate', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold outline-none focus:border-purple-600"
+                  >
+                    <option value="">-- No mapeado --</option>
+                    {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Lugar de Captura</label>
+                  <select
+                    value={columnMapping.caughtLocation}
+                    onChange={(e) => handleMappingChange('caughtLocation', e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold outline-none focus:border-purple-600"
                   >
                     <option value="">-- No mapeado --</option>

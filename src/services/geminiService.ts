@@ -22,6 +22,8 @@ export interface DetectedPokemon {
   isPurified: boolean;
   isShiny: boolean;
   frameIndex: number;
+  caughtDate?: string | null;
+  caughtLocation?: string | null;
 }
 
 export interface NotDetected {
@@ -70,7 +72,9 @@ If this IS a Pokémon detail screen, extract ALL visible data as JSON:
   "ivPercent": <0-100 if visible, null otherwise>,
   "isShadow": <true if purple/dark flames or "Shadow"/"Oscuro" visible, false otherwise>,
   "isPurified": <true if white glowing aura/sparkles or "Purified"/"Purificado" visible, false otherwise>,
-  "isShiny": <true if the Pokémon model has shiny coloring/particles, or if the three-sparkles icon is visible next to the name/CP, false otherwise>
+  "isShiny": <true if the Pokémon model has shiny coloring/particles, or if the three-sparkles icon is visible next to the name/CP, false otherwise>,
+  "caughtDate": "the date the Pokémon was caught if visible at the bottom of the screen (e.g. '2026-08-06' or '14/07/2026' or 'July 14, 2026'), null otherwise",
+  "caughtLocation": "the location where the Pokémon was caught if visible at the bottom of the screen (e.g. 'Monterrey, México' or 'Chicago, IL'), null otherwise"
 }
 
 If this is NOT a Pokémon detail screen (it's a menu, transition, loading screen, Pokémon list, map, etc.):
@@ -202,8 +206,10 @@ async function analyzeFrame(
     const isShadow = Boolean(parsed.isShadow);
     const isPurified = Boolean(parsed.isPurified);
     const isShiny = Boolean(parsed.isShiny);
+    const caughtDate = parsed.caughtDate ? String(parsed.caughtDate).trim() : null;
+    const caughtLocation = parsed.caughtLocation ? String(parsed.caughtLocation).trim() : null;
 
-    console.log(`Frame #${frameIndex} DETECTED:`, { name, cp, level, fastMove, chargedMove1, ivPercent, isShiny, isPurified });
+    console.log(`Frame #${frameIndex} DETECTED:`, { name, cp, level, fastMove, chargedMove1, ivPercent, isShiny, isPurified, caughtDate, caughtLocation });
 
     return {
       detected: true,
@@ -221,6 +227,8 @@ async function analyzeFrame(
       isPurified,
       isShiny,
       frameIndex,
+      caughtDate,
+      caughtLocation,
     };
   } catch (err) {
     console.warn(`Error analizando fotograma #${frameIndex}:`, err);

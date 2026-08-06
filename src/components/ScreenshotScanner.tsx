@@ -3,6 +3,7 @@ import { Upload, Loader2, CheckCircle2, AlertCircle, Trash2, Download, Zap, Shie
 import { analyzeFrames, DetectedPokemon, AnalysisProgress, isGeminiConfigured } from '../services/geminiService';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import { useInventoryStore } from '../store/inventoryStore';
+import { UserPokemon } from '../types/UserInventory';
 import { getSpanishMoveName } from '../utils/pogoMoveTranslator';
 
 function getValidMovesForSpecies(speciesName: string) {
@@ -19,9 +20,10 @@ type ScanPhase = 'idle' | 'reading' | 'analyzing' | 'preview' | 'done' | 'error'
 interface ScreenshotScannerProps {
   onComplete?: () => void;
   importMode?: 'merge' | 'overwrite' | 'append';
+  onImportRequest?: (list: Omit<UserPokemon, 'id' | 'addedAt'>[]) => void;
 }
 
-export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete, importMode = 'merge' as const }) => {
+export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete, importMode = 'merge' as const, onImportRequest }) => {
   const [phase, setPhase] = useState<ScanPhase>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -118,14 +120,20 @@ export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete
       isShadow: p.isShadow,
       isPurified: p.isPurified || false,
       isShiny: p.isShiny || false,
+      caughtDate: p.caughtDate || undefined,
+      caughtLocation: p.caughtLocation || undefined,
       isFavorite: false,
     }));
 
-    importPokemons(pokemonsToImport, importMode);
-    setPhase('done');
-    setStatusMessage(`¡${pokemonsToImport.length} Pokémon importados a tu Caja!`);
-    if (onComplete) {
-      setTimeout(() => onComplete(), 1500);
+    if (onImportRequest) {
+      onImportRequest(pokemonsToImport);
+    } else {
+      importPokemons(pokemonsToImport, importMode);
+      setPhase('done');
+      setStatusMessage(`¡${pokemonsToImport.length} Pokémon importados a tu Caja!`);
+      if (onComplete) {
+        setTimeout(() => onComplete(), 1500);
+      }
     }
   };
 

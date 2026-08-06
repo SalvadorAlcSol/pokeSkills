@@ -11,7 +11,7 @@ interface InventoryState {
   updatePokemon: (id: string, updates: Partial<UserPokemon>) => void;
   removePokemon: (id: string) => void;
   importPokemons: (
-    pokemons: Omit<UserPokemon, 'id' | 'addedAt'>[],
+    pokemons: (Omit<UserPokemon, 'id' | 'addedAt'> & { id?: string })[],
     mode?: 'merge' | 'overwrite' | 'append'
   ) => void;
   clearInventory: () => void;
@@ -122,17 +122,25 @@ export const useInventoryStore = create<InventoryState>()(
           const upsertRows: any[] = [];
 
           for (const p of pokemons) {
-            // Check if there is an existing Pokémon in state.inventory that matches
-            const matchIndex = updatedInventory.findIndex(
-              (exist) =>
-                exist.name.toLowerCase() === p.name.toLowerCase() &&
-                exist.ivAtk === p.ivAtk &&
-                exist.ivDef === p.ivDef &&
-                exist.ivHp === p.ivHp &&
-                Boolean(exist.isShadow) === Boolean(p.isShadow) &&
-                Boolean(exist.isPurified) === Boolean(p.isPurified) &&
-                Boolean(exist.isShiny) === Boolean(p.isShiny)
-            );
+            const existingId = p.id;
+            const matchIndex = existingId
+              ? updatedInventory.findIndex((exist) => exist.id === existingId)
+              : updatedInventory.findIndex((exist) => {
+                  const speciesMatch = exist.name.toLowerCase() === p.name.toLowerCase();
+                  const ivsMatch = exist.ivAtk === p.ivAtk && exist.ivDef === p.ivDef && exist.ivHp === p.ivHp;
+                  const formsMatch =
+                    Boolean(exist.isShadow) === Boolean(p.isShadow) &&
+                    Boolean(exist.isPurified) === Boolean(p.isPurified) &&
+                    Boolean(exist.isShiny) === Boolean(p.isShiny);
+
+                  if (!speciesMatch || !ivsMatch || !formsMatch) return false;
+
+                  // If both have caught date/location and they differ, they are NOT duplicates
+                  if (exist.caughtDate && p.caughtDate && exist.caughtDate !== p.caughtDate) return false;
+                  if (exist.caughtLocation && p.caughtLocation && exist.caughtLocation !== p.caughtLocation) return false;
+
+                  return true;
+                });
 
             if (matchIndex !== -1) {
               // Update existing matched Pokémon
@@ -141,7 +149,9 @@ export const useInventoryStore = create<InventoryState>()(
                 ...existing,
                 ...p, // overwrite Level, CP, Fast Move, Charged Moves, etc.
                 id: existing.id,
-                addedAt: existing.addedAt // Keep metadata
+                addedAt: existing.addedAt, // Keep metadata
+                caughtDate: p.caughtDate || existing.caughtDate,
+                caughtLocation: p.caughtLocation || existing.caughtLocation,
               };
               updatedInventory[matchIndex] = updatedPoke;
               upsertRows.push({ id: updatedPoke.id, data: updatedPoke, updated_at: new Date() });
@@ -150,7 +160,7 @@ export const useInventoryStore = create<InventoryState>()(
               const newPoke: UserPokemon = {
                 ...p,
                 id: uuidv4(),
-                addedAt: Date.now()
+                addedAt: Date.now(),
               };
               updatedInventory.push(newPoke);
               upsertRows.push({ id: newPoke.id, data: newPoke, updated_at: new Date() });
