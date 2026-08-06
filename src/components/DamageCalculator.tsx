@@ -703,99 +703,103 @@ export const DamageCalculator: React.FC<DamageCalculatorProps> = ({ onBackToHub 
               )}
             </div>
 
-            {/* Type Filter Bar for Attacker */}
-            <TypeFilterBar
-              selectedTypes={attackerSelectedTypes}
-              onToggleType={handleToggleAttackerType}
-              onClearTypes={() => setAttackerSelectedTypes([])}
-            />
+            {!useUserInventoryAttacker && (
+              <>
+                {/* Type Filter Bar for Attacker */}
+                <TypeFilterBar
+                  selectedTypes={attackerSelectedTypes}
+                  onToggleType={handleToggleAttackerType}
+                  onClearTypes={() => setAttackerSelectedTypes([])}
+                />
 
-            {/* Live Autocomplete Search Bar */}
-            <div className="relative">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                {t.searchAttacker}
-              </label>
-              <div className="relative flex items-center gap-1.5">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={attackerSearch}
-                    onFocus={() => setShowAttackerDropdown(true)}
-                    onChange={(e) => {
-                      setAttackerSearch(e.target.value);
-                      setShowAttackerDropdown(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSearchAttackerApi();
-                    }}
-                    placeholder={`Actual: ${attackerBase.name}...`}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner"
-                  />
-                </div>
-                {attackerSearch && (
-                  <button
-                    onClick={handleSearchAttackerApi}
-                    disabled={isSearchingAttackerApi}
-                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold shrink-0 flex items-center gap-1 transition-all shadow-sm"
-                  >
-                    {isSearchingAttackerApi ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      'Buscar API'
-                    )}
-                  </button>
-                )}
-              </div>
-
-              {/* Dropdown Menu List */}
-              {showAttackerDropdown && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white border-2 border-slate-200 rounded-2xl shadow-xl p-1.5">
-                  {filteredAttackerList.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-slate-600 flex flex-col gap-2">
-                      <span>{t.localDatabaseNote}</span>
+                {/* Live Autocomplete Search Bar */}
+                <div className="relative">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    {t.searchAttacker}
+                  </label>
+                  <div className="relative flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={attackerSearch}
+                        onFocus={() => setShowAttackerDropdown(true)}
+                        onChange={(e) => {
+                          setAttackerSearch(e.target.value);
+                          setShowAttackerDropdown(true);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSearchAttackerApi();
+                        }}
+                        placeholder={`Actual: ${attackerBase.name}...`}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+                    {attackerSearch && (
                       <button
                         onClick={handleSearchAttackerApi}
-                        className="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-extrabold"
+                        disabled={isSearchingAttackerApi}
+                        className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold shrink-0 flex items-center gap-1 transition-all shadow-sm"
                       >
-                        {t.searchPokeApiGlobal} "{attackerSearch}"
-                      </button>
-                    </div>
-                  ) : (
-                    filteredAttackerList.map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() => {
-                          setAttackerBase(p);
-                          setAttackerSearch('');
-                          setShowAttackerDropdown(false);
-                        }}
-                        className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <img src={p.spriteUrl} alt={p.name} className="w-8 h-8 object-contain" />
-                          <div>
-                            <span className="text-xs font-extrabold text-slate-900 block">{p.name}</span>
-                            <div className="flex items-center gap-1">
-                              {p.types.map((tItem) => (
-                                <span key={tItem} className="text-[9px] uppercase text-slate-600 font-bold">
-                                  {getTypeLabel(tItem, language)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        {((p.specialForms && p.specialForms.length > 0) || (p.megaForms && p.megaForms.length > 0)) && (
-                          <span className="text-[9px] bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 rounded-full font-extrabold uppercase">
-                            {p.specialForms?.[0]?.category || 'ESPECIAL'}
-                          </span>
+                        {isSearchingAttackerApi ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          'Buscar API'
                         )}
-                      </div>
-                    ))
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Menu List */}
+                  {showAttackerDropdown && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white border-2 border-slate-200 rounded-2xl shadow-xl p-1.5">
+                      {filteredAttackerList.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-slate-600 flex flex-col gap-2">
+                          <span>{t.localDatabaseNote}</span>
+                          <button
+                            onClick={handleSearchAttackerApi}
+                            className="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-extrabold"
+                          >
+                            {t.searchPokeApiGlobal} "{attackerSearch}"
+                          </button>
+                        </div>
+                      ) : (
+                        filteredAttackerList.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setAttackerBase(p);
+                              setAttackerSearch('');
+                              setShowAttackerDropdown(false);
+                            }}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <img src={p.spriteUrl} alt={p.name} className="w-8 h-8 object-contain" />
+                              <div>
+                                <span className="text-xs font-extrabold text-slate-900 block">{p.name}</span>
+                                <div className="flex items-center gap-1">
+                                  {p.types.map((tItem) => (
+                                    <span key={tItem} className="text-[9px] uppercase text-slate-600 font-bold">
+                                      {getTypeLabel(tItem, language)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            {((p.specialForms && p.specialForms.length > 0) || (p.megaForms && p.megaForms.length > 0)) && (
+                              <span className="text-[9px] bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 rounded-full font-extrabold uppercase">
+                                {p.specialForms?.[0]?.category || 'ESPECIAL'}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
 
             {/* Checkbox for Special Forms & Megas (ONLY IF POKEMON HAS SPECIAL FORMS / MEGAS) */}
             {((attackerBase.specialForms && attackerBase.specialForms.length > 0) ||
