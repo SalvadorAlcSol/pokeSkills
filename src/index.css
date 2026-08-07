@@ -20,6 +20,40 @@
   font-family: 'Lato', sans-serif;
 }
 
+/* Glassmorphism & Glow Utilities */
+.pogo-glass-panel {
+  background: linear-gradient(135deg, rgba(17, 34, 68, 0.85) 0%, rgba(11, 27, 60, 0.95) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.pogo-glass-card {
+  background: linear-gradient(145deg, rgba(20, 42, 82, 0.9) 0%, rgba(11, 27, 60, 0.95) 100%);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pogo-glass-card:hover {
+  border-color: #FFE550;
+  box-shadow: 0 16px 40px rgba(17, 96, 192, 0.35), 0 0 20px rgba(255, 229, 80, 0.2);
+  transform: translateY(-4px);
+}
+
+.pogo-glow-yellow {
+  box-shadow: 0 0 20px rgba(255, 229, 80, 0.35);
+}
+
+.pogo-glow-red {
+  box-shadow: 0 0 20px rgba(194, 38, 21, 0.4);
+}
+
+.pogo-glow-blue {
+  box-shadow: 0 0 20px rgba(17, 96, 192, 0.4);
+}
+
 .bg-pogo-prussian { background-color: #0B1B3C; }
 .bg-pogo-red { background-color: #C22615; }
 .bg-pogo-blue { background-color: #1160C0; }
@@ -37,3 +71,12 @@
 .border-pogo-blue { border-color: #1160C0; }
 .border-pogo-yellow { border-color: #FFE550; }
 .border-pogo-sky { border-color: #97E1E1; }
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s infinite ease-in-out;
+}
