@@ -11,8 +11,8 @@
 
   body {
     font-family: 'Lato', 'Outfit', system-ui, -apple-system, sans-serif;
-    background-color: #0B1B3C;
-    color: #F4F5F7;
+    background-color: #F3F7FA;
+    color: #0F172A;
   }
 }
 
@@ -20,38 +20,50 @@
   font-family: 'Lato', sans-serif;
 }
 
-/* Glassmorphism & Glow Utilities */
-.pogo-glass-panel {
-  background: linear-gradient(135deg, rgba(17, 34, 68, 0.85) 0%, rgba(11, 27, 60, 0.95) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+/* Official Pokémon GO Outdoor Friendly Card System */
+.pogo-card {
+  background-color: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.pogo-glass-card {
-  background: linear-gradient(145deg, rgba(20, 42, 82, 0.9) 0%, rgba(11, 27, 60, 0.95) 100%);
-  backdrop-filter: blur(12px);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.pogo-card:hover {
+  border-color: #1160C0;
+  box-shadow: 0 20px 30px -10px rgba(17, 96, 192, 0.2), 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  transform: translateY(-3px);
 }
 
-.pogo-glass-card:hover {
-  border-color: #FFE550;
-  box-shadow: 0 16px 40px rgba(17, 96, 192, 0.35), 0 0 20px rgba(255, 229, 80, 0.2);
-  transform: translateY(-4px);
+/* Brand Button System */
+.pogo-btn-primary {
+  background: linear-gradient(135deg, #C22615 0%, #E52E1B 100%);
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(194, 38, 21, 0.35);
+  transition: all 0.2s ease;
 }
 
-.pogo-glow-yellow {
-  box-shadow: 0 0 20px rgba(255, 229, 80, 0.35);
+.pogo-btn-primary:hover {
+  background: linear-gradient(135deg, #D62B18 0%, #F53825 100%);
+  box-shadow: 0 6px 18px rgba(194, 38, 21, 0.45);
+  transform: translateY(-1px);
 }
 
-.pogo-glow-red {
-  box-shadow: 0 0 20px rgba(194, 38, 21, 0.4);
+.pogo-btn-blue {
+  background: linear-gradient(135deg, #1160C0 0%, #1D72DB 100%);
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(17, 96, 192, 0.35);
+  transition: all 0.2s ease;
 }
 
-.pogo-glow-blue {
-  box-shadow: 0 0 20px rgba(17, 96, 192, 0.4);
+.pogo-btn-blue:hover {
+  background: linear-gradient(135deg, #146EDC 0%, #2581F5 100%);
+  box-shadow: 0 6px 18px rgba(17, 96, 192, 0.45);
+  transform: translateY(-1px);
 }
 
 .bg-pogo-prussian { background-color: #0B1B3C; }
@@ -65,18 +77,3 @@
 .text-pogo-blue { color: #1160C0; }
 .text-pogo-yellow { color: #FFE550; }
 .text-pogo-sky { color: #97E1E1; }
-
-.border-pogo-prussian { border-color: #0B1B3C; }
-.border-pogo-red { border-color: #C22615; }
-.border-pogo-blue { border-color: #1160C0; }
-.border-pogo-yellow { border-color: #FFE550; }
-.border-pogo-sky { border-color: #97E1E1; }
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 4s infinite ease-in-out;
-}

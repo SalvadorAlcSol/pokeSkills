@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   const mins = metrics.totalDurationMins % 60;
 
   return (
-    <header className="pogo-glass-panel border-b-4 border-[#C22615] text-white px-4 py-3.5 sticky top-0 z-30 shadow-2xl font-pogo">
+    <header className="bg-gradient-to-r from-[#C22615] via-[#D62B18] to-[#C22615] border-b-4 border-red-800 text-white px-4 py-3.5 sticky top-0 z-30 shadow-md font-pogo">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Brand Title & Back to Hub */}
         <div className="flex items-center justify-between">
