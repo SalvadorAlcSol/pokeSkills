@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Swords, Shield, Sparkles, ArrowRight, Activity, Compass, Download, FolderInput, CheckCircle2, Smartphone, Globe, Check } from 'lucide-react';
+import { MapPin, Swords, Shield, Sparkles, ArrowRight, Activity, Compass, Download, FolderInput, CheckCircle2, Smartphone, Globe, Check, Target } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSelector } from './LanguageSelector';
 import { exportFullAppBackup, importFullAppBackupFile } from '../utils/backupService';
@@ -15,7 +15,7 @@ const PokeballIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 );
 
-export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory') => void }> = ({
+export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory' | 'nyc-quests') => void }> = ({
   onSelectTool,
 }) => {
   const { t } = useLanguage();
@@ -220,6 +220,48 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
               </span>
               <button className="px-4.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 group-hover:shadow-lg">
                 <span>Gestionar Caja</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tool 5: NYC PokéMap Quests & PGSharp Radar */}
+          <div
+            onClick={() => onSelectTool('nyc-quests')}
+            className="pogo-card p-6 sm:p-7 cursor-pointer flex flex-col justify-between group relative overflow-hidden md:col-span-2 bg-gradient-to-br from-white via-amber-50/50 to-red-50/50 border-2 border-amber-300 hover:border-amber-500 shadow-md hover:shadow-xl transition-all"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 via-rose-600 to-amber-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                  <Target className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping" />
+                    En Vivo (nycpokemap.com)
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#0B1B3C] text-amber-300 border border-amber-400 shadow-sm">
+                    PGSharp Ready
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 group-hover:text-red-600 transition-colors flex items-center gap-2 font-pogo">
+                  🎯 Desafíos NYC PokéMap
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed mt-2 font-medium">
+                  Explorador en tiempo real de investigaciones de campo en Nueva York conectándose a nycpokemap.com. Filtra tareas por desafío o recompensa (Caramelos Raros, Spinda, Mega Energía, Polvos Estelares) y copia coordenadas exactas en formato <code>lat,long</code> sin espacios con un solo clic para teletransporte en PGSharp.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" /> Copia directa al portapapeles en 1 clic
+              </span>
+              <button className="px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-700 hover:to-amber-600 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 group-hover:shadow-lg">
+                <span>Abrir Radar de Desafíos</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>

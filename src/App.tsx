@@ -5,16 +5,24 @@ import { RouteTracker } from './components/RouteTracker';
 import { DamageCalculator } from './components/DamageCalculator';
 import { RaidTeamGenerator } from './components/RaidTeamGenerator';
 import { InventoryManager } from './components/InventoryManager';
+import { NycQuestsTool } from './components/NycQuestsTool';
 import { useInventoryStore } from './store/inventoryStore';
 import { isSupabaseConfigured } from './services/supabaseClient';
 
-type ScreenType = 'hub' | 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory';
+export type ScreenType = 'hub' | 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory' | 'nyc-quests';
 
 function MainApp() {
   const { inventory } = useInventoryStore();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>(() => {
     const saved = localStorage.getItem('poketools_current_screen');
-    if (saved === 'route-tracker' || saved === 'damage-calc' || saved === 'raid-generator' || saved === 'inventory' || saved === 'hub') {
+    if (
+      saved === 'route-tracker' ||
+      saved === 'damage-calc' ||
+      saved === 'raid-generator' ||
+      saved === 'inventory' ||
+      saved === 'nyc-quests' ||
+      saved === 'hub'
+    ) {
       return saved as ScreenType;
     }
     return 'hub';
@@ -37,10 +45,23 @@ function MainApp() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setCurrentScreen('hub')}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 font-black text-sm transition-colors"
+            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 font-black text-sm transition-colors cursor-pointer"
           >
             <span className="text-base">⚡</span>
             <span className="tracking-tight">PokeSkills Hub</span>
+          </button>
+
+          {/* Quick Tab to NYC Quests */}
+          <button
+            onClick={() => setCurrentScreen('nyc-quests')}
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+              currentScreen === 'nyc-quests'
+                ? 'bg-red-600 text-white border-red-500 shadow-sm'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
+          >
+            <span>🎯</span>
+            <span>Misiones NYC (PGSharp)</span>
           </button>
         </div>
 
@@ -48,7 +69,7 @@ function MainApp() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentScreen('inventory')}
-            className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 border shadow-sm ${
+            className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 border shadow-sm cursor-pointer ${
               currentScreen === 'inventory'
                 ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/30'
                 : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'
@@ -77,6 +98,9 @@ function MainApp() {
         )}
         {currentScreen === 'inventory' && (
           <InventoryManager onBackToHub={() => setCurrentScreen('hub')} />
+        )}
+        {currentScreen === 'nyc-quests' && (
+          <NycQuestsTool onBackToHub={() => setCurrentScreen('hub')} />
         )}
         {currentScreen === 'hub' && (
           <HubMenu onSelectTool={(tool) => setCurrentScreen(tool)} />

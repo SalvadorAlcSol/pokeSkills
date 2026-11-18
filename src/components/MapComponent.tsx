@@ -79,10 +79,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       attributionControl: false,
     }).setView([52.5, -1.8], 6);
 
-    // Dark carto tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // OpenStreetMap 100% libre y sin API key
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
+      minZoom: 5,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
