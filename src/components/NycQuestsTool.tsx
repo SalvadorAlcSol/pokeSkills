@@ -98,7 +98,7 @@ function createPokestopDivIcon(quest: NycQuest, isVisited: boolean, isSelected: 
   });
 }
 
-// Las 57 Poképaradas registradas y visitadas en la sesión de hoy
+// Las 63 Poképaradas registradas y visitadas en la sesión de hoy
 export const INITIAL_VISITED_STOPS: string[] = [
   "Memorial bench for Joseph Brandefine_40.594178,-74.186656",
   "Greenstreets park_40.537626,-74.189922",
@@ -156,7 +156,13 @@ export const INITIAL_VISITED_STOPS: string[] = [
   "Round Fountain at Ruppert Park_40.780776,-73.95026",
   "Dekovats Playground_40.779267,-73.94447",
   "Carl Schurz Park_40.777176,-73.942901",
-  "St. Stephen of Hungary Catholic Church_40.773881,-73.950469"
+  "St. Stephen of Hungary Catholic Church_40.773881,-73.950469",
+  "Gracie Mews Outdoor Sculpture_40.772953,-73.951779",
+  "Congregation Bnai Jehuda Sign board_40.771997,-73.953871",
+  "Ornate Wreaths_40.771362,-73.961656",
+  "Virgin Mother by Damien Hirst_40.759692,-73.97251",
+  "Stone Muse_40.76724,-73.960407",
+  "Pita Grill Wall Sculpture_40.759473,-73.965374"
 ];
 
 export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => {
