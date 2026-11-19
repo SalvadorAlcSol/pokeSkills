@@ -215,6 +215,8 @@ export const OFFICIAL_GMAX_SPECIES_IDS = new Set<number>([
   815, // Cinderace (Gigantamax)
   818, // Inteleon (Gigantamax)
   849, // Toxtricity (Gigantamax)
+  851, // Centiskorch (Gigantamax)
+  858, // Hatterene (Gigantamax)
   861, // Grimmsnarl (Gigantamax)
   884, // Duraludon (Gigantamax)
 ]);
