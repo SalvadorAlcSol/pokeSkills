@@ -620,3 +620,131 @@ export function generateNycRouteGPX(routeStops: NycRouteStop[]): string {
 
   return `${gpxHeader}\n${points}\n${gpxFooter}`;
 }
+
+export interface NycCloudSyncPayload {
+  visitedStops: string[];
+  lastCopiedQuest?: NycQuest | null;
+  activeRoute?: NycGeneratedRoute | null;
+  routeCurrentIdx?: number;
+  updatedAt: number;
+}
+
+const NYC_CLOUD_SYNC_BASE_ENDPOINTS = [
+  '/api/nyc-cloud-sync',
+  'https://ntfy.sh/pokeskills_nyc_sync_v2_salca',
+];
+
+/**
+ * Descarga el estado consolidado de paradas visitadas NYC desde la nube (Celular <-> PC)
+ */
+export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | null> {
+  for (const base of NYC_CLOUD_SYNC_BASE_ENDPOINTS) {
+    try {
+      const res = await fetch(`${base}/json?poll=1&since=all`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      if (!res.ok) continue;
+      const text = await res.text();
+      const lines = text.trim().split('\n').filter(Boolean);
+
+      const visitedSet = new Set<string>();
+      let latestCopied: NycQuest | null = null;
+      let latestUpdatedAt = 0;
+
+      for (const line of lines) {
+        try {
+          const env = JSON.parse(line);
+          if (env?.event !== 'message' || typeof env.message !== 'string') continue;
+          const data = JSON.parse(env.message);
+          if (Array.isArray(data?.visitedStops)) {
+            for (const s of data.visitedStops) {
+              if (typeof s === 'string' && s) visitedSet.add(s);
+            }
+          }
+          const ts = typeof data?.updatedAt === 'number' ? data.updatedAt : (env.time || 0) * 1000;
+          if (ts >= latestUpdatedAt) {
+            latestUpdatedAt = ts;
+            if (data?.lastCopiedQuest) {
+              latestCopied = data.lastCopiedQuest;
+            }
+          }
+        } catch {
+          // Ignorar líneas malformadas
+        }
+      }
+
+      return {
+        visitedStops: Array.from(visitedSet),
+        lastCopiedQuest: latestCopied,
+        updatedAt: latestUpdatedAt,
+      };
+    } catch {
+      // Probar siguiente endpoint
+    }
+  }
+  return null;
+}
+
+/**
+ * Sincroniza hacia la nube enviando únicamente los deltas nuevos en bloques seguros (<3 KB) y haciendo Set Union
+ */
+export async function pushNycCloudSyncState(
+  localPayload: NycCloudSyncPayload
+): Promise<NycCloudSyncPayload | null> {
+  const remote = await fetchNycCloudSyncState();
+  const remoteSet = new Set<string>(remote?.visitedStops || []);
+  const missingInCloud = localPayload.visitedStops.filter(k => k && !remoteSet.has(k));
+
+  const mergedVisited = Array.from(
+    new Set<string>([...remoteSet, ...localPayload.visitedStops])
+  );
+
+  const now = Date.now();
+  const mergedPayload: NycCloudSyncPayload = {
+    visitedStops: mergedVisited,
+    lastCopiedQuest: localPayload.lastCopiedQuest ?? remote?.lastCopiedQuest ?? null,
+    updatedAt: now,
+  };
+
+  if (missingInCloud.length === 0) {
+    return mergedPayload;
+  }
+
+  // Dividir deltas en bloques de máximo 35 paradas (~2.2 KB por bloque)
+  const chunkSize = 35;
+  const chunks: string[][] = [];
+  for (let i = 0; i < missingInCloud.length; i += chunkSize) {
+    chunks.push(missingInCloud.slice(i, i + chunkSize));
+  }
+
+  for (const base of NYC_CLOUD_SYNC_BASE_ENDPOINTS) {
+    let allOk = true;
+    for (let c = 0; c < chunks.length; c++) {
+      const isLastChunk = c === chunks.length - 1;
+      const bodyStr = JSON.stringify({
+        visitedStops: chunks[c],
+        lastCopiedQuest: isLastChunk ? localPayload.lastCopiedQuest ?? null : undefined,
+        updatedAt: now,
+      });
+      try {
+        const res = await fetch(base, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: bodyStr,
+        });
+        if (!res.ok) {
+          allOk = false;
+          break;
+        }
+      } catch {
+        allOk = false;
+        break;
+      }
+    }
+    if (allOk) {
+      return mergedPayload;
+    }
+  }
+  return null;
+}

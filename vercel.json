@@ -4,6 +4,8 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/nycpokemap/(.*)", "destination": "https://nycpokemap.com/$1" },
+    { "source": "/api/nyc-cloud-sync/(.*)", "destination": "https://ntfy.sh/pokeskills_nyc_sync_v2_salca/$1" },
+    { "source": "/api/nyc-cloud-sync", "destination": "https://ntfy.sh/pokeskills_nyc_sync_v2_salca" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

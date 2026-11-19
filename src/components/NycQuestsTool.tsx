@@ -30,7 +30,8 @@ import {
   Trash2,
   RotateCcw,
   Eye,
-  EyeOff
+  EyeOff,
+  Cloud
 } from 'lucide-react';
 import {
   NycQuest,
@@ -45,6 +46,8 @@ import {
   isQuestVisited,
   generateOptimalNycRoute,
   generateNycRouteGPX,
+  fetchNycCloudSyncState,
+  pushNycCloudSyncState,
   POPULAR_PRESET_FILTERS
 } from '../services/nycPokeMapService';
 import { getDistance } from '../utils/pogoMath';
@@ -470,6 +473,10 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   const isPickingOriginRef = useRef<boolean>(isPickingOriginOnMap);
   const pipWindowRef = useRef<Window | null>(null);
   const skipNextPanRef = useRef<boolean>(false);
+  const hasPulledCloudRef = useRef<boolean>(false);
+  const isPullingCloudRef = useRef<boolean>(false);
+  const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
+  const [lastCloudSyncAt, setLastCloudSyncAt] = useState<Date | null>(null);
 
   useEffect(() => {
     isPickingOriginRef.current = isPickingOriginOnMap;
@@ -523,6 +530,110 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   useEffect(() => {
     writeStorage(NYC_STORAGE_KEYS.ROUTE_COUNT, routeTargetCount);
   }, [routeTargetCount]);
+
+  // Sincronización automática bidireccional en la nube (Celular <-> PC)
+  const handleSyncWithCloud = useCallback(
+    async (showToastOnSuccess = false) => {
+      if (isPullingCloudRef.current) return;
+      isPullingCloudRef.current = true;
+      setIsCloudSyncing(true);
+      try {
+        const remote = await fetchNycCloudSyncState();
+        let mergedList: string[] = Array.from(visitedStops);
+        let addedFromCloud = 0;
+
+        if (remote && Array.isArray(remote.visitedStops)) {
+          const unionSet = new Set<string>(visitedStops);
+          for (const k of remote.visitedStops) {
+            if (k && !unionSet.has(k)) {
+              unionSet.add(k);
+              addedFromCloud++;
+            }
+          }
+          mergedList = Array.from(unionSet);
+          if (addedFromCloud > 0) {
+            setVisitedStops(unionSet);
+            try {
+              localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+
+          if (!lastCopiedQuest && remote.lastCopiedQuest) {
+            setLastCopiedQuest(remote.lastCopiedQuest);
+          }
+        }
+
+        hasPulledCloudRef.current = true;
+
+        // Si el dispositivo local tiene paradas que la nube aún no tenía o se pidió sync manual, subir la unión
+        const remoteCount = remote?.visitedStops?.length ?? 0;
+        if (mergedList.length > remoteCount || showToastOnSuccess) {
+          await pushNycCloudSyncState({
+            visitedStops: mergedList,
+            lastCopiedQuest,
+            activeRoute,
+            routeCurrentIdx,
+            updatedAt: Date.now(),
+          });
+        }
+
+        setLastCloudSyncAt(new Date());
+        if (showToastOnSuccess) {
+          setCopiedCoords(
+            addedFromCloud > 0
+              ? `☁️ +${addedFromCloud} paradas sincronizadas desde tu otro dispositivo (${mergedList.length} total)`
+              : `☁️ Nube al día (${mergedList.length} paradas sincronizadas Celular ↔ PC)`
+          );
+          setTimeout(() => setCopiedCoords(null), 3200);
+        }
+      } catch (e) {
+        console.error('Error sincronizando con la nube:', e);
+      } finally {
+        isPullingCloudRef.current = false;
+        setIsCloudSyncing(false);
+      }
+    },
+    [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx]
+  );
+
+  // Pull inicial al abrir en PC o Celular y cada vez que la pestaña vuelve a foco
+  useEffect(() => {
+    handleSyncWithCloud(false);
+
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        handleSyncWithCloud(false);
+      }
+    };
+    window.addEventListener('focus', onFocusOrVisible);
+    document.addEventListener('visibilitychange', onFocusOrVisible);
+    return () => {
+      window.removeEventListener('focus', onFocusOrVisible);
+      document.removeEventListener('visibilitychange', onFocusOrVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Push automático con debounce cuando se marcan nuevas paradas visitadas o avanza la ruta
+  useEffect(() => {
+    if (!hasPulledCloudRef.current) return;
+    const timer = setTimeout(() => {
+      pushNycCloudSyncState({
+        visitedStops: Array.from(visitedStops),
+        lastCopiedQuest,
+        activeRoute,
+        routeCurrentIdx,
+        updatedAt: Date.now(),
+      })
+        .then(res => {
+          if (res) setLastCloudSyncAt(new Date());
+        })
+        .catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx]);
 
   // Conjunto de coordenadas normalizadas a 5 decimales (~1.1 m) de todas las paradas visitadas
   const visitedCoordSet = useMemo(() => extractVisitedCoordSet(visitedStops), [visitedStops]);
@@ -2308,6 +2419,21 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
             </span>
 
             <div className="flex flex-wrap items-center gap-2">
+              {/* Botón de Sincronización en la Nube Celular <-> PC */}
+              <button
+                onClick={() => handleSyncWithCloud(true)}
+                disabled={isCloudSyncing}
+                className="px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border-sky-300 disabled:opacity-60"
+                title={
+                  lastCloudSyncAt
+                    ? `Sincronizado Celular ↔ PC a las ${lastCloudSyncAt.toLocaleTimeString()}`
+                    : 'Sincronizar paradas visitadas entre Celular y PC'
+                }
+              >
+                <Cloud className={`w-3.5 h-3.5 text-sky-600 ${isCloudSyncing ? 'animate-pulse' : ''}`} />
+                <span>{isCloudSyncing ? 'Sincronizando...' : 'Sync Celular↔PC'}</span>
+              </button>
+
               {/* Botón para Alternar entre ver todas u ocultar las ya visitadas */}
               <button
                 onClick={() => setHideVisited(prev => !prev)}

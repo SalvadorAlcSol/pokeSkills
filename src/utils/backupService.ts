@@ -8,6 +8,7 @@
  */
 
 import { useInventoryStore } from '../store/inventoryStore';
+import { pushNycCloudSyncState } from '../services/nycPokeMapService';
 
 export interface FullAppBackup {
   version: string;
@@ -18,6 +19,12 @@ export interface FullAppBackup {
     currentIndex?: number;
     isOptimized?: boolean;
     settings?: any;
+  };
+  nycState?: {
+    visitedStops?: string[];
+    activeRoute?: any;
+    routeCurrentIdx?: number;
+    lastCopiedQuest?: any;
   };
   language?: string;
 }
@@ -37,8 +44,13 @@ export function exportFullAppBackup(): void {
     const savedSet = localStorage.getItem('pogo_settings');
     const savedLang = localStorage.getItem('pokeroutes_lang') || 'es';
 
+    const nycVisited = localStorage.getItem('pgsharp_copied_stops');
+    const nycRoute = localStorage.getItem('nyc_active_route_v1');
+    const nycRouteIdx = localStorage.getItem('nyc_active_route_idx_v1');
+    const nycLastCopied = localStorage.getItem('nyc_last_copied_quest_v1');
+
     const backup: FullAppBackup = {
-      version: '2.0',
+      version: '2.1',
       timestamp: Date.now(),
       inventory,
       routeState: {
@@ -46,6 +58,12 @@ export function exportFullAppBackup(): void {
         currentIndex: savedIdx !== null ? Number(savedIdx) : undefined,
         isOptimized: savedOpt !== null ? JSON.parse(savedOpt) : undefined,
         settings: savedSet ? JSON.parse(savedSet) : undefined,
+      },
+      nycState: {
+        visitedStops: nycVisited ? JSON.parse(nycVisited) : undefined,
+        activeRoute: nycRoute ? JSON.parse(nycRoute) : undefined,
+        routeCurrentIdx: nycRouteIdx !== null ? JSON.parse(nycRouteIdx) : undefined,
+        lastCopiedQuest: nycLastCopied ? JSON.parse(nycLastCopied) : undefined,
       },
       language: savedLang,
     };
@@ -102,6 +120,33 @@ export function importFullAppBackupFile(
 
         if (parsed.language) {
           localStorage.setItem('pokeroutes_lang', parsed.language);
+        }
+
+        if (parsed.nycState) {
+          const { visitedStops, activeRoute, routeCurrentIdx, lastCopiedQuest } = parsed.nycState;
+          if (Array.isArray(visitedStops)) {
+            const existingRaw = localStorage.getItem('pgsharp_copied_stops');
+            const existing: string[] = existingRaw ? JSON.parse(existingRaw) : [];
+            const merged = Array.from(new Set([...existing, ...visitedStops]));
+            localStorage.setItem('pgsharp_copied_stops', JSON.stringify(merged));
+            hasRoute = true;
+            await pushNycCloudSyncState({
+              visitedStops: merged,
+              activeRoute: activeRoute ?? null,
+              routeCurrentIdx: routeCurrentIdx ?? 0,
+              lastCopiedQuest: lastCopiedQuest ?? null,
+              updatedAt: Date.now(),
+            });
+          }
+          if (activeRoute !== undefined) {
+            localStorage.setItem('nyc_active_route_v1', JSON.stringify(activeRoute));
+          }
+          if (routeCurrentIdx !== undefined) {
+            localStorage.setItem('nyc_active_route_idx_v1', JSON.stringify(routeCurrentIdx));
+          }
+          if (lastCopiedQuest !== undefined) {
+            localStorage.setItem('nyc_last_copied_quest_v1', JSON.stringify(lastCopiedQuest));
+          }
         }
       } else if (Array.isArray(parsed)) {
         importedPokemonsList = parsed;
