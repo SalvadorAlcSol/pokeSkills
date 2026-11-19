@@ -1,11 +1,43 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, type Plugin} from 'vite';
+
+function appVersionManifestPlugin(buildId: string): Plugin {
+  const payload = JSON.stringify(
+    {
+      buildId,
+      builtAt: new Date().toISOString(),
+    },
+    null,
+    2
+  );
+
+  return {
+    name: 'pokeroutes-version-manifest',
+    configureServer(server) {
+      server.middlewares.use('/version.json', (_req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.end(payload);
+      });
+    },
+    writeBundle(options) {
+      const outDir = options.dir || path.resolve(__dirname, 'dist');
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, 'version.json'), payload, 'utf8');
+    },
+  };
+}
 
 export default defineConfig(() => {
+  const buildId = String(Date.now());
   return {
-    plugins: [react(), tailwindcss()],
+    define: {
+      __APP_BUILD_ID__: JSON.stringify(buildId),
+    },
+    plugins: [react(), tailwindcss(), appVersionManifestPlugin(buildId)],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

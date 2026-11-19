@@ -1,9 +1,10 @@
 import React from 'react';
-import { MapPin, Swords, Shield, Sparkles, ArrowRight, Activity, Compass, Download, FolderInput, CheckCircle2, Smartphone, Globe, Check, Target } from 'lucide-react';
+import { MapPin, Swords, Shield, Sparkles, ArrowRight, Activity, Compass, Download, FolderInput, CheckCircle2, Smartphone, Globe, Check, Target, Zap, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSelector } from './LanguageSelector';
 import { exportFullAppBackup, importFullAppBackupFile } from '../utils/backupService';
 import { useInventoryStore } from '../store/inventoryStore';
+import { forceRefreshAppFromServer } from '../utils/appUpdater';
 
 const PokeballIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,8 +16,16 @@ const PokeballIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 );
 
-export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-calc' | 'raid-generator' | 'inventory' | 'nyc-quests') => void }> = ({
+export const HubMenu: React.FC<{
+  onSelectTool: (tool: 'route-tracker' | 'damage-calc' | 'raid-generator' | 'max-battles' | 'inventory' | 'nyc-quests') => void;
+  updateAvailable?: boolean;
+  isRefreshingApp?: boolean;
+  onRefreshApp?: () => void;
+}> = ({
   onSelectTool,
+  updateAvailable = false,
+  isRefreshingApp = false,
+  onRefreshApp,
 }) => {
   const { t } = useLanguage();
   const { inventory } = useInventoryStore();
@@ -56,8 +65,27 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
             </div>
           </div>
 
-          {/* Right Header Actions: Language Selector */}
-          <div className="flex items-center gap-3">
+          {/* Right Header Actions: Refresh App & Language Selector */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => (onRefreshApp ? onRefreshApp() : forceRefreshAppFromServer())}
+              disabled={isRefreshingApp}
+              className={`px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all shadow-sm border cursor-pointer ${
+                updateAvailable
+                  ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 border-emerald-200 animate-pulse'
+                  : 'bg-red-800/70 hover:bg-red-900 text-yellow-200 border-red-400/50'
+              }`}
+              title="Buscar y aplicar cambios del servidor sin cerrar la app"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingApp ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">
+                {isRefreshingApp
+                  ? 'Actualizando...'
+                  : updateAvailable
+                  ? '¡Actualizar Ahora!'
+                  : 'Actualizar'}
+              </span>
+            </button>
             <LanguageSelector />
           </div>
         </div>
@@ -220,6 +248,47 @@ export const HubMenu: React.FC<{ onSelectTool: (tool: 'route-tracker' | 'damage-
               </span>
               <button className="px-4.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 group-hover:shadow-lg">
                 <span>Gestionar Caja</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tool 5: Combates Max (Dynamax & Gigamax) */}
+          <div
+            onClick={() => onSelectTool('max-battles')}
+            className="pogo-card p-6 sm:p-7 cursor-pointer flex flex-col justify-between group relative overflow-hidden md:col-span-2 bg-gradient-to-br from-white via-fuchsia-50/70 to-purple-50/60 border-2 border-fuchsia-300 hover:border-fuchsia-500 shadow-md hover:shadow-xl transition-all"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#9D174D] via-fuchsia-600 to-purple-700 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                  <Zap className="w-7 h-7 text-yellow-300" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-fuchsia-700 text-white shadow-sm">
+                    ⚡ Dinamax & Gigamax
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-slate-900 text-amber-300 border border-fuchsia-400 shadow-sm">
+                    Eternatus / Zacian / Maxiseta
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 group-hover:text-fuchsia-700 transition-colors flex items-center gap-2 font-pogo">
+                  {t.maxBattlesTitle}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed mt-2 font-medium">
+                  {t.maxBattlesDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-5 border-t border-fuchsia-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-fuchsia-600" /> Generador de Equipos · Top 18 Tipos · Simulador de Golpes & KO
+              </span>
+              <button className="px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-700 hover:from-fuchsia-700 hover:to-purple-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 group-hover:shadow-lg">
+                <span>{t.openMaxBattles}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>

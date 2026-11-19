@@ -106,6 +106,11 @@ interface Translations {
   includeMegas: string;
   attackerLevelLabel: string;
   topCountersTag: string;
+
+  // Max Battles
+  maxBattlesTitle: string;
+  maxBattlesDesc: string;
+  openMaxBattles: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -213,6 +218,11 @@ const translations: Record<Language, Translations> = {
     includeMegas: 'Incluir Formas Especiales / Megas',
     attackerLevelLabel: 'Nivel Objetivo de los Atacantes:',
     topCountersTag: 'TOP COUNTERS',
+
+    // Max Battles
+    maxBattlesTitle: 'Combates Max (Dinamax & Gigamax)',
+    maxBattlesDesc: 'Generador de equipos Max según el jefe del nodo, calculadora exacta de ataques Dinamax/Gigamax con recálculo en vivo (Eternatus, Zacian, Zamazenta, Maxiseta, Ayudantes), ranking por los 18 tipos y simulador de golpes hasta KO.',
+    openMaxBattles: 'Abrir Simulador Max',
   },
   en: {
     // Hub Menu
@@ -318,6 +328,11 @@ const translations: Record<Language, Translations> = {
     includeMegas: 'Include Special Forms / Megas',
     attackerLevelLabel: 'Target Attacker Level:',
     topCountersTag: 'TOP COUNTERS',
+
+    // Max Battles
+    maxBattlesTitle: 'Max Battles (Dynamax & Gigantamax)',
+    maxBattlesDesc: 'Max team generator tailored to any Power Spot boss, exact Dynamax/Gigantamax attack calculator with live modifiers (Eternatus, Zacian, Zamazenta, Max Mushroom, Helpers), 18-type rankings, and hit-to-KO battle simulator.',
+    openMaxBattles: 'Open Max Simulator',
   },
 };
 
