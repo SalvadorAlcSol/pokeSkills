@@ -358,7 +358,22 @@ export const INITIAL_VISITED_STOPS: string[] = [
   "Ornate Wreaths_40.771362,-73.961656",
   "Virgin Mother by Damien Hirst_40.759692,-73.97251",
   "Stone Muse_40.76724,-73.960407",
-  "Pita Grill Wall Sculpture_40.759473,-73.965374"
+  "Pita Grill Wall Sculpture_40.759473,-73.965374",
+  "Garment Wear Arcade_40.754251,-73.992708",
+  "Arvaci Coffee_40.754783,-73.993987",
+  "Artsy Pineapple_40.754182,-73.99404",
+  "Sam Ash Music Store_40.752888,-73.994859",
+  "B&H_40.753202,-73.996242",
+  "Penn Station's Half Century_40.751145,-73.995698",
+  "Shapes_40.751541,-73.99318",
+  "14 Penn Plaza Ornate Doorway_40.751686,-73.991869",
+  "Eagle Relief_40.751203,-73.990774",
+  "Andrews NYC Diner_40.751695,-73.98992",
+  "Oscar De La Renta_40.752669,-73.990411",
+  "Tiger Mural_40.753243,-73.988402",
+  "Millinery Center Synagogue_40.752603,-73.985969",
+  "Four Builders_40.753816,-73.98586",
+  "Bryant Park Campsite - Integrity_40.754087,-73.984441"
 ];
 
 export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => {
