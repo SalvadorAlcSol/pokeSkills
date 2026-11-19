@@ -627,11 +627,13 @@ export interface NycCloudSyncPayload {
   activeRoute?: NycGeneratedRoute | null;
   routeCurrentIdx?: number;
   updatedAt: number;
+  action?: 'merge' | 'replace';
+  resetEpoch?: number;
 }
 
 const NYC_CLOUD_SYNC_BASE_ENDPOINTS = [
   '/api/nyc-cloud-sync',
-  'https://ntfy.sh/pokeskills_nyc_sync_v2_salca',
+  'https://ntfy.sh/pokeskills_nyc_sync_v3_salca',
 ];
 
 /**
@@ -648,24 +650,40 @@ export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | nu
       const text = await res.text();
       const lines = text.trim().split('\n').filter(Boolean);
 
-      const visitedSet = new Set<string>();
+      let visitedSet = new Set<string>();
       let latestCopied: NycQuest | null = null;
       let latestUpdatedAt = 0;
+      let currentResetEpoch = 0;
 
       for (const line of lines) {
         try {
           const env = JSON.parse(line);
           if (env?.event !== 'message' || typeof env.message !== 'string') continue;
           const data = JSON.parse(env.message);
-          if (Array.isArray(data?.visitedStops)) {
-            for (const s of data.visitedStops) {
-              if (typeof s === 'string' && s) visitedSet.add(s);
+          const ts = typeof data?.updatedAt === 'number' ? data.updatedAt : (env.time || 0) * 1000;
+          const msgResetEpoch = typeof data?.resetEpoch === 'number' ? data.resetEpoch : 0;
+
+          // Si el mensaje es una sustitución/reinicio autoritativo
+          if (data?.action === 'replace' && ts >= currentResetEpoch) {
+            currentResetEpoch = ts;
+            visitedSet = new Set<string>();
+            if (Array.isArray(data?.visitedStops)) {
+              for (const s of data.visitedStops) {
+                if (typeof s === 'string' && s) visitedSet.add(s);
+              }
+            }
+          } else if (msgResetEpoch >= currentResetEpoch || ts >= currentResetEpoch) {
+            // Incorporación normal respetando el último epoch de reinicio
+            if (Array.isArray(data?.visitedStops)) {
+              for (const s of data.visitedStops) {
+                if (typeof s === 'string' && s) visitedSet.add(s);
+              }
             }
           }
-          const ts = typeof data?.updatedAt === 'number' ? data.updatedAt : (env.time || 0) * 1000;
+
           if (ts >= latestUpdatedAt) {
             latestUpdatedAt = ts;
-            if (data?.lastCopiedQuest) {
+            if (data?.lastCopiedQuest !== undefined) {
               latestCopied = data.lastCopiedQuest;
             }
           }
@@ -678,6 +696,7 @@ export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | nu
         visitedStops: Array.from(visitedSet),
         lastCopiedQuest: latestCopied,
         updatedAt: latestUpdatedAt,
+        resetEpoch: currentResetEpoch,
       };
     } catch {
       // Probar siguiente endpoint
@@ -687,45 +706,63 @@ export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | nu
 }
 
 /**
- * Sincroniza hacia la nube enviando únicamente los deltas nuevos en bloques seguros (<3 KB) y haciendo Set Union
+ * Sincroniza hacia la nube enviando únicamente los deltas nuevos en bloques seguros (<3 KB)
+ * Soporta forceReplace para restablecer o vaciar el historial limpiamente en todos los dispositivos
  */
 export async function pushNycCloudSyncState(
-  localPayload: NycCloudSyncPayload
+  localPayload: NycCloudSyncPayload,
+  options?: { forceReplace?: boolean }
 ): Promise<NycCloudSyncPayload | null> {
-  const remote = await fetchNycCloudSyncState();
-  const remoteSet = new Set<string>(remote?.visitedStops || []);
-  const missingInCloud = localPayload.visitedStops.filter(k => k && !remoteSet.has(k));
-
-  const mergedVisited = Array.from(
-    new Set<string>([...remoteSet, ...localPayload.visitedStops])
-  );
-
+  const isReplace = !!options?.forceReplace;
   const now = Date.now();
+
+  let stopsToSend: string[] = [];
+  let mergedVisited: string[] = [];
+
+  if (isReplace) {
+    stopsToSend = localPayload.visitedStops.filter(Boolean);
+    mergedVisited = [...stopsToSend];
+  } else {
+    const remote = await fetchNycCloudSyncState();
+    const remoteSet = new Set<string>(remote?.visitedStops || []);
+    stopsToSend = localPayload.visitedStops.filter(k => k && !remoteSet.has(k));
+    mergedVisited = Array.from(new Set<string>([...remoteSet, ...localPayload.visitedStops]));
+  }
+
   const mergedPayload: NycCloudSyncPayload = {
     visitedStops: mergedVisited,
-    lastCopiedQuest: localPayload.lastCopiedQuest ?? remote?.lastCopiedQuest ?? null,
+    lastCopiedQuest: localPayload.lastCopiedQuest ?? null,
     updatedAt: now,
+    resetEpoch: isReplace ? now : undefined,
+    action: isReplace ? 'replace' : 'merge',
   };
 
-  if (missingInCloud.length === 0) {
+  if (!isReplace && stopsToSend.length === 0) {
     return mergedPayload;
   }
 
-  // Dividir deltas en bloques de máximo 35 paradas (~2.2 KB por bloque)
+  // Dividir en bloques de máximo 35 paradas (~2.2 KB por bloque)
   const chunkSize = 35;
   const chunks: string[][] = [];
-  for (let i = 0; i < missingInCloud.length; i += chunkSize) {
-    chunks.push(missingInCloud.slice(i, i + chunkSize));
+  if (stopsToSend.length === 0) {
+    chunks.push([]);
+  } else {
+    for (let i = 0; i < stopsToSend.length; i += chunkSize) {
+      chunks.push(stopsToSend.slice(i, i + chunkSize));
+    }
   }
 
   for (const base of NYC_CLOUD_SYNC_BASE_ENDPOINTS) {
     let allOk = true;
     for (let c = 0; c < chunks.length; c++) {
+      const isFirstChunk = c === 0;
       const isLastChunk = c === chunks.length - 1;
       const bodyStr = JSON.stringify({
         visitedStops: chunks[c],
         lastCopiedQuest: isLastChunk ? localPayload.lastCopiedQuest ?? null : undefined,
         updatedAt: now,
+        action: isReplace && isFirstChunk ? 'replace' : 'merge',
+        resetEpoch: isReplace ? now : undefined,
       });
       try {
         const res = await fetch(base, {
@@ -746,5 +783,6 @@ export async function pushNycCloudSyncState(
       return mergedPayload;
     }
   }
-  return null;
+
+  return mergedPayload;
 }

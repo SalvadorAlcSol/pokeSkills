@@ -58,6 +58,8 @@ interface NycQuestsToolProps {
 
 const NYC_STORAGE_KEYS = {
   VISITED_STOPS: 'pgsharp_copied_stops',
+  VISITED_VERSION: 'nyc_visited_version_v3',
+  RESET_EPOCH: 'nyc_reset_epoch_v3',
   ACTIVE_PRESET: 'nyc_active_preset',
   SELECTED_CONDITION: 'nyc_selected_condition',
   SELECTED_REWARD: 'nyc_selected_reward',
@@ -412,9 +414,18 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     readStorage<boolean>(NYC_STORAGE_KEYS.HIDE_VISITED, false)
   );
 
-  // Cargar paradas visitadas combinando la lista inicial con localStorage
+  // Cargar paradas visitadas combinando la lista inicial con localStorage (migrado limpiamente a v3)
   const [visitedStops, setVisitedStops] = useState<Set<string>>(() => {
     try {
+      const version = localStorage.getItem(NYC_STORAGE_KEYS.VISITED_VERSION);
+      if (version !== 'v3') {
+        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_VERSION, 'v3');
+        localStorage.setItem(
+          NYC_STORAGE_KEYS.VISITED_STOPS,
+          JSON.stringify(INITIAL_VISITED_STOPS)
+        );
+        return new Set(INITIAL_VISITED_STOPS);
+      }
       const saved = localStorage.getItem(NYC_STORAGE_KEYS.VISITED_STOPS);
       const existing: string[] = saved ? JSON.parse(saved) : [];
       const combined = new Set<string>([...INITIAL_VISITED_STOPS, ...existing]);
@@ -424,6 +435,10 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       return new Set(INITIAL_VISITED_STOPS);
     }
   });
+
+  // Gestor modal de paradas visitadas
+  const [isVisitedManagerOpen, setIsVisitedManagerOpen] = useState<boolean>(false);
+  const [visitedSearchTerm, setVisitedSearchTerm] = useState<string>('');
 
   // Última parada copiada persistida (antirreinicio)
   const [lastCopiedQuest, setLastCopiedQuest] = useState<NycQuest | null>(() =>
@@ -558,20 +573,31 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         let addedFromCloud = 0;
 
         if (remote && Array.isArray(remote.visitedStops)) {
-          const unionSet = new Set<string>(visitedStops);
-          for (const k of remote.visitedStops) {
-            if (k && !unionSet.has(k)) {
-              unionSet.add(k);
-              addedFromCloud++;
+          const remoteResetEpoch = remote.resetEpoch || 0;
+          const localResetEpoch = Number(localStorage.getItem(NYC_STORAGE_KEYS.RESET_EPOCH) || '0');
+
+          if (remoteResetEpoch > localResetEpoch) {
+            const freshSet = new Set<string>(remote.visitedStops);
+            mergedList = Array.from(freshSet);
+            setVisitedStops(freshSet);
+            localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(remoteResetEpoch));
+            localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
+          } else {
+            const unionSet = new Set<string>(visitedStops);
+            for (const k of remote.visitedStops) {
+              if (k && !unionSet.has(k)) {
+                unionSet.add(k);
+                addedFromCloud++;
+              }
             }
-          }
-          mergedList = Array.from(unionSet);
-          if (addedFromCloud > 0) {
-            setVisitedStops(unionSet);
-            try {
-              localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
-            } catch (e) {
-              console.error(e);
+            mergedList = Array.from(unionSet);
+            if (addedFromCloud > 0) {
+              setVisitedStops(unionSet);
+              try {
+                localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
 
@@ -612,6 +638,80 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     },
     [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx]
   );
+
+  // Restablecer historial exactamente a las 78 paradas confirmadas hoy
+  const handleResetToInitialVisited = useCallback(async () => {
+    const now = Date.now();
+    const freshSet = new Set(INITIAL_VISITED_STOPS);
+    setVisitedStops(freshSet);
+    try {
+      localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
+      localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(INITIAL_VISITED_STOPS));
+    } catch (e) {
+      console.error(e);
+    }
+    await pushNycCloudSyncState(
+      {
+        visitedStops: INITIAL_VISITED_STOPS,
+        lastCopiedQuest,
+        activeRoute,
+        updatedAt: now,
+      },
+      { forceReplace: true }
+    );
+    setCopiedCoords(`✓ Historial restablecido a las ${INITIAL_VISITED_STOPS.length} paradas de hoy`);
+    setTimeout(() => setCopiedCoords(null), 3200);
+  }, [lastCopiedQuest, activeRoute]);
+
+  // Vaciar completamente el historial a 0 paradas visitadas
+  const handleClearAllVisited = useCallback(async () => {
+    if (!window.confirm('¿Seguro que deseas vaciar todas las paradas visitadas (dejar en 0)?')) return;
+    const now = Date.now();
+    setVisitedStops(new Set());
+    try {
+      localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
+      localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify([]));
+    } catch (e) {
+      console.error(e);
+    }
+    await pushNycCloudSyncState(
+      {
+        visitedStops: [],
+        lastCopiedQuest: null,
+        activeRoute: null,
+        updatedAt: now,
+      },
+      { forceReplace: true }
+    );
+    setCopiedCoords('✓ Historial de visitadas vaciado (0)');
+    setTimeout(() => setCopiedCoords(null), 3200);
+  }, []);
+
+  // Eliminar una parada específica de la lista de visitadas
+  const handleRemoveSingleVisited = useCallback(async (stopKey: string) => {
+    const now = Date.now();
+    setVisitedStops(prev => {
+      const next = new Set<string>(prev as Set<string>);
+      next.delete(stopKey);
+      const arr: string[] = Array.from(next);
+      try {
+        localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
+        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(arr));
+      } catch (e) {
+        console.error(e);
+      }
+      pushNycCloudSyncState(
+        {
+          visitedStops: arr,
+          lastCopiedQuest,
+          activeRoute,
+          updatedAt: now,
+        },
+        { forceReplace: true }
+      );
+      return next;
+    });
+  }, [lastCopiedQuest, activeRoute]);
 
   // Pull inicial al abrir en PC o Celular y cada vez que la pestaña vuelve a foco
   useEffect(() => {
@@ -2467,6 +2567,16 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
                 </span>
               </button>
 
+              {/* Botón para abrir el Gestor / Historial de paradas visitadas */}
+              <button
+                onClick={() => setIsVisitedManagerOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs"
+                title="Ver lista, buscar, eliminar paradas o restablecer a las 78 de hoy"
+              >
+                <Eye className="w-3.5 h-3.5 text-slate-600" />
+                <span>Gestionar ({visitedStops.size})</span>
+              </button>
+
               <span className="text-xs font-black text-slate-700 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-200 shadow-xs">
                 📍 {filteredQuests.length.toLocaleString()} paradas en mapa
               </span>
@@ -2883,6 +2993,151 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           </div>
         )}
       </main>
+
+      {/* Modal / Gestor de Paradas Visitadas */}
+      {isVisitedManagerOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border-2 border-slate-300 flex flex-col max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Cabecera del Modal */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">
+                  <Check className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Poképaradas Visitadas ({visitedStops.size})
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Historial sincronizado automáticamente entre Celular y PC
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsVisitedManagerOpen(false)}
+                className="p-2 rounded-full hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Acciones Rápidas */}
+            <div className="p-4 border-b border-slate-100 bg-slate-50/70 flex flex-wrap items-center gap-2 justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleResetToInitialVisited}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Restaura la lista limpia oficial de 78 paradas de hoy"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restablecer a las 78 de hoy</span>
+                </button>
+                <button
+                  onClick={handleClearAllVisited}
+                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Vaciar todo el historial (dejar en 0 visitadas)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Vaciar (0)</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleSyncWithCloud(true)}
+                disabled={isCloudSyncing}
+                className="px-3 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Cloud className={`w-3.5 h-3.5 ${isCloudSyncing ? 'animate-pulse' : ''}`} />
+                <span>{isCloudSyncing ? 'Sincronizando...' : 'Sync Nube'}</span>
+              </button>
+            </div>
+
+            {/* Buscador */}
+            <div className="px-4 pt-3 pb-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre de parada o coordenada..."
+                  value={visitedSearchTerm}
+                  onChange={e => setVisitedSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-emerald-400"
+                />
+                {visitedSearchTerm && (
+                  <button
+                    onClick={() => setVisitedSearchTerm('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Lista Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-1.5 divide-y divide-slate-100">
+              {(() => {
+                const stopsArray = Array.from(visitedStops) as string[];
+                const filtered = visitedSearchTerm.trim()
+                  ? stopsArray.filter(s => s.toLowerCase().includes(visitedSearchTerm.toLowerCase()))
+                  : stopsArray;
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                      {visitedSearchTerm
+                        ? 'No se encontraron paradas con esa búsqueda.'
+                        : 'No tienes paradas visitadas registradas.'}
+                    </div>
+                  );
+                }
+
+                return filtered.map((stopKey, idx) => {
+                  const parts = stopKey.split('_');
+                  const name = parts[0] || stopKey;
+                  const coords = parts[1] || '';
+                  return (
+                    <div
+                      key={stopKey}
+                      className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs hover:bg-slate-50 p-2 rounded-xl transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-black text-slate-400">#{idx + 1}</span>
+                          <span className="font-bold text-slate-800 truncate">{name}</span>
+                        </div>
+                        {coords && (
+                          <span className="text-[11px] font-mono text-slate-500 block">
+                            {coords}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleRemoveSingleVisited(stopKey)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Quitar esta parada de las visitadas"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Pie del modal */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 text-xs text-slate-500 font-medium">
+              <span>Total: {visitedStops.size} registradas</span>
+              <button
+                onClick={() => setIsVisitedManagerOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold cursor-pointer transition-colors"
+              >
+                Listo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

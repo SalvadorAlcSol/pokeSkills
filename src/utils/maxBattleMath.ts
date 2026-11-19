@@ -195,16 +195,44 @@ export const GIGANTAMAX_SPECIES: Record<number, GMaxSpeciesSpec[]> = {
   ],
 };
 
-// Official Pokémon GO Max Battle eligible roster (Dynamax, Gigantamax & Special Crowned/Eternatus)
+// Official Pokémon GO Gigantamax species (released or in-game assets verified in Pokémon GO)
+// Theoretical G-Max (Sandaconda, Coalossal, Centiskorch, etc.) remain in GIGANTAMAX_SPECIES for theoretical mode only.
+export const OFFICIAL_GMAX_SPECIES_IDS = new Set<number>([
+  3,   // Venusaur (Gigantamax)
+  6,   // Charizard (Gigantamax)
+  9,   // Blastoise (Gigantamax)
+  12,  // Butterfree (Gigantamax)
+  25,  // Pikachu (Gigantamax)
+  52,  // Meowth (Gigantamax)
+  68,  // Machamp (Gigantamax)
+  94,  // Gengar (Gigantamax)
+  99,  // Kingler (Gigantamax)
+  131, // Lapras (Gigantamax)
+  143, // Snorlax (Gigantamax)
+  569, // Garbodor (Gigantamax)
+  809, // Melmetal (Gigantamax)
+  812, // Rillaboom (Gigantamax)
+  815, // Cinderace (Gigantamax)
+  818, // Inteleon (Gigantamax)
+  849, // Toxtricity (Gigantamax)
+  861, // Grimmsnarl (Gigantamax)
+  884, // Duraludon (Gigantamax)
+]);
+
+// Official Pokémon GO Max Battle eligible roster (strictly verified against Niantic / PoGoHub)
+// Unreleased species (such as Garchomp #445, Golurk #623, Sandaconda #844, etc.) are strictly excluded from the official pool
+// and are only visible when the user enables "Toda la Pokédex (Teórico)".
 export const OFFICIAL_MAX_ELIGIBLE_IDS = new Set<number>([
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 25, 37, 38, 52, 53, 63, 64, 65,
-  66, 67, 68, 90, 91, 92, 93, 94, 98, 99, 113, 130, 131, 133, 134, 135, 136, 138, 139,
-  140, 141, 143, 144, 145, 146, 196, 197, 213, 242, 243, 244, 245, 246, 247, 248, 249, 250,
-  302, 303, 304, 305, 306, 374, 375, 376, 380, 381, 443, 444, 445, 470, 471, 519, 520, 521,
-  529, 530, 554, 555, 568, 569, 615, 622, 623, 635, 700, 764, 780, 808, 809, 810, 811, 812,
-  813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824, 825, 826, 831, 832, 833, 834,
-  837, 838, 839, 840, 841, 842, 843, 844, 848, 849, 850, 851, 856, 857, 858, 859, 860, 861,
-  868, 869, 870, 878, 879, 884, 885, 886, 887, 888, 889, 890, 891, 892,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 52, 58, 59, 63, 64, 65, 66, 67, 68,
+  92, 93, 94, 98, 99, 106, 107, 111, 112, 113, 125, 129, 130, 131, 133, 134,
+  135, 136, 138, 139, 140, 141, 143, 144, 145, 146, 163, 164, 196, 197, 213,
+  215, 237, 242, 243, 244, 245, 249, 250, 280, 281, 282, 302, 320, 321, 328,
+  329, 330, 349, 350, 363, 364, 365, 374, 375, 376, 377, 378, 379, 380, 381,
+  461, 464, 466, 470, 471, 475, 480, 481, 482, 483, 484, 519, 520, 521, 524,
+  525, 526, 527, 528, 529, 530, 554, 555, 568, 569, 615, 633, 634, 635, 686,
+  687, 700, 761, 762, 763, 766, 780, 808, 809, 810, 811, 812, 813, 814, 815,
+  816, 817, 818, 819, 820, 821, 822, 823, 831, 832, 849, 850, 851, 856, 857,
+  858, 861, 870, 884, 891, 892, 895,
 ]);
 
 // Accurate PvE Fast Move Durations (seconds)
@@ -1085,7 +1113,8 @@ export function buildMaxRosterEntries(includeAllPokedex: boolean): MaxRosterEntr
     const isOfficialSpecies = OFFICIAL_MAX_ELIGIBLE_IDS.has(p.id);
 
     // Special Crowned Forms for Zacian (888) and Zamazenta (889)
-    if (p.id === 888 || p.id === 889) {
+    // Only available when testing full theoretical Pokédex since they cannot enter Power Spots in PoGo
+    if ((p.id === 888 || p.id === 889) && includeAllPokedex) {
       const forms = p.specialForms || [];
       const crowned = forms.find(
         (f) => f.id === 'zacian_crowned' || f.id === 'zamazenta_crowned'
@@ -1097,9 +1126,9 @@ export function buildMaxRosterEntries(includeAllPokedex: boolean): MaxRosterEntr
           formId: crowned.id,
           name: crowned.name,
           displayNameEs:
-            p.id === 888 ? 'Zacian Espada Suprema' : 'Zamazenta Escudo Supremo',
+            p.id === 888 ? 'Zacian Espada Suprema (Teórico)' : 'Zamazenta Escudo Supremo (Teórico)',
           displayNameEn:
-            p.id === 888 ? 'Zacian (Crowned Sword)' : 'Zamazenta (Crowned Shield)',
+            p.id === 888 ? 'Zacian (Crowned Sword - Theoretical)' : 'Zamazenta (Crowned Shield - Theoretical)',
           types: crowned.types,
           baseAttack: crowned.baseAttack,
           baseDefense: crowned.baseDefense,
@@ -1112,44 +1141,57 @@ export function buildMaxRosterEntries(includeAllPokedex: boolean): MaxRosterEntr
               ? crowned.chargedMoves
               : p.chargedMoves,
           isGigantamax: false,
-          isOfficialMax: true,
+          isOfficialMax: false,
         });
       }
-      if (!includeAllPokedex) continue;
+      continue;
     }
 
     // Gigantamax forms
     const gmaxList = GIGANTAMAX_SPECIES[p.id];
     if (gmaxList && gmaxList.length > 0) {
-      gmaxList.forEach((gmax, idx) => {
-        entries.push({
-          key: `${p.id}-gmax-${idx}`,
-          pokemonId: p.id,
-          name: p.name,
-          displayNameEs: gmax.labelEs,
-          displayNameEn: gmax.labelEn,
-          types: gmax.overrideTypes || p.types,
-          baseAttack: p.baseAttack,
-          baseDefense: p.baseDefense,
-          baseStamina: p.baseStamina,
-          spriteUrl: p.spriteUrl,
-          fastMoves: p.fastMoves,
-          chargedMoves: p.chargedMoves,
-          isGigantamax: true,
-          gmaxVariantIndex: idx,
-          isOfficialMax: true,
+      const isOfficialGMax = OFFICIAL_GMAX_SPECIES_IDS.has(p.id);
+      if (isOfficialGMax || includeAllPokedex) {
+        gmaxList.forEach((gmax, idx) => {
+          entries.push({
+            key: `${p.id}-gmax-${idx}`,
+            pokemonId: p.id,
+            name: p.name,
+            displayNameEs: isOfficialGMax ? gmax.labelEs : `${gmax.labelEs} (Teórico)`,
+            displayNameEn: isOfficialGMax ? gmax.labelEn : `${gmax.labelEn} (Theoretical)`,
+            types: gmax.overrideTypes || p.types,
+            baseAttack: p.baseAttack,
+            baseDefense: p.baseDefense,
+            baseStamina: p.baseStamina,
+            spriteUrl: p.spriteUrl,
+            fastMoves: p.fastMoves,
+            chargedMoves: p.chargedMoves,
+            isGigantamax: true,
+            gmaxVariantIndex: idx,
+            isOfficialMax: isOfficialGMax,
+          });
         });
-      });
+      }
     }
 
-    // Standard Dynamax / Base form (Note: Eternatus #890 doesn't Dynamax, enters as base)
+    // Standard Dynamax / Base form (Note: Eternatus #890 enters as base power source/boss)
     if (isOfficialSpecies || includeAllPokedex) {
       entries.push({
         key: `${p.id}-dmax`,
         pokemonId: p.id,
         name: p.name,
-        displayNameEs: p.id === 890 ? 'Eternatus' : `${p.name} (Dinamax)`,
-        displayNameEn: p.id === 890 ? 'Eternatus' : `${p.name} (Dynamax)`,
+        displayNameEs:
+          p.id === 890
+            ? 'Eternatus'
+            : isOfficialSpecies
+            ? `${p.name} (Dinamax)`
+            : `${p.name} (Dinamax Teórico)`,
+        displayNameEn:
+          p.id === 890
+            ? 'Eternatus'
+            : isOfficialSpecies
+            ? `${p.name} (Dynamax)`
+            : `${p.name} (Dynamax Theoretical)`,
         types: p.types,
         baseAttack: p.baseAttack,
         baseDefense: p.baseDefense,
@@ -1668,10 +1710,11 @@ export function generateMaxTeamFromInventory(params: {
     }
 
     if (!basePoke) continue;
+    const isOfficialGMax = OFFICIAL_GMAX_SPECIES_IDS.has(basePoke.id);
+    const isOfficialDMax = OFFICIAL_MAX_ELIGIBLE_IDS.has(basePoke.id);
     const isOfficial =
-      OFFICIAL_MAX_ELIGIBLE_IDS.has(basePoke.id) ||
-      specialForm?.id === 'zacian_crowned' ||
-      specialForm?.id === 'zamazenta_crowned' ||
+      isOfficialDMax ||
+      isOfficialGMax ||
       Boolean(userPoke.isDynamax) ||
       Boolean(userPoke.isGigantamax);
     if (onlyOfficialMax && !isOfficial) continue;
@@ -1706,7 +1749,9 @@ export function generateMaxTeamFromInventory(params: {
         typeCategory: 'charged' as const,
       };
 
-    const gmaxAvailable = Boolean(GIGANTAMAX_SPECIES[basePoke.id]);
+    const gmaxAvailable =
+      Boolean(GIGANTAMAX_SPECIES[basePoke.id]) &&
+      (!onlyOfficialMax || isOfficialGMax);
     const isNicknameGmax =
       (userPoke.nickname || '').toLowerCase().includes('gmax') ||
       (userPoke.nickname || '').toLowerCase().includes('gigamax') ||

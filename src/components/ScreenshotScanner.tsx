@@ -1,6 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle, Trash2, Download, Zap, Shield, Heart, X, Sparkles, Image } from 'lucide-react';
-import { analyzeFrames, DetectedPokemon, AnalysisProgress, isGeminiConfigured } from '../services/geminiService';
+import {
+  analyzeFrames,
+  DetectedPokemon,
+  AnalysisProgress,
+  isGeminiConfigured,
+  detectedPokemonToUserPokemon,
+} from '../services/geminiService';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import { useInventoryStore } from '../store/inventoryStore';
 import { UserPokemon } from '../types/UserInventory';
@@ -106,24 +112,7 @@ export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete
   );
 
   const handleImportAll = () => {
-    const pokemonsToImport = detectedPokemons.map((p) => ({
-      speciesId: p.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-      name: p.name,
-      cp: p.cp,
-      level: p.level ?? 40,
-      ivAtk: p.ivAtk ?? 15,
-      ivDef: p.ivDef ?? 15,
-      ivHp: p.ivHp ?? 15,
-      fastMove: p.fastMove,
-      chargedMove1: p.chargedMove1,
-      chargedMove2: p.chargedMove2 || undefined,
-      isShadow: p.isShadow,
-      isPurified: p.isPurified || false,
-      isShiny: p.isShiny || false,
-      caughtDate: p.caughtDate || undefined,
-      caughtLocation: p.caughtLocation || undefined,
-      isFavorite: false,
-    }));
+    const pokemonsToImport = detectedPokemons.map(detectedPokemonToUserPokemon);
 
     if (onImportRequest) {
       onImportRequest(pokemonsToImport);
@@ -304,6 +293,28 @@ export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete
                     {poke.isShadow && <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">💀 Shadow</span>}
                     {poke.isPurified && <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">✨ Purificado</span>}
                     {poke.isShiny && <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-0.5">🌟 Variocolor</span>}
+                    {poke.isGigantamax && <span className="bg-gradient-to-r from-rose-600 to-fuchsia-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">🌋 Gigamax</span>}
+                    {!poke.isGigantamax && poke.isDynamax && <span className="bg-pink-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">💥 Dinamax</span>}
+                    {poke.isLucky && <span className="bg-yellow-100 text-yellow-900 border border-yellow-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🍀 Suerte</span>}
+                    {poke.canMegaEvolve && <span className="bg-pink-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">💎 Mega Nv.{poke.megaLevel || 1}</span>}
+                    {!poke.canMegaEvolve && poke.megaEvolveCost !== null && poke.megaEvolveCost !== undefined && poke.megaEvolveCost >= 100 && (
+                      <span className="bg-slate-200 text-slate-800 border border-slate-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🔒 1ª Mega ({poke.megaEvolveCost})</span>
+                    )}
+                    {poke.megaEnergy !== null && poke.megaEnergy !== undefined && (
+                      <span className="bg-pink-100 text-pink-900 border border-pink-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🧬 {poke.megaEnergy} Mega</span>
+                    )}
+                    {(poke.isBestBuddy || poke.buddyLevel === 4) && (
+                      <span className="bg-gradient-to-r from-amber-500 to-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">🎖️ Mejor Compañero</span>
+                    )}
+                    {!poke.isBestBuddy && poke.buddyLevel !== null && poke.buddyLevel !== undefined && poke.buddyLevel > 0 && poke.buddyLevel < 4 && (
+                      <span className="bg-orange-100 text-orange-900 border border-orange-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🧡 Comp. Nv.{poke.buddyLevel}</span>
+                    )}
+                    {poke.candy !== null && poke.candy !== undefined && (
+                      <span className="bg-amber-50 text-amber-900 border border-amber-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🍬 {poke.candy}</span>
+                    )}
+                    {poke.candyXl !== null && poke.candyXl !== undefined && (
+                      <span className="bg-indigo-50 text-indigo-900 border border-indigo-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold">🔺 {poke.candyXl} XL</span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-700 font-bold mt-1">
@@ -364,6 +375,13 @@ export const ScreenshotScanner: React.FC<ScreenshotScannerProps> = ({ onComplete
                       {poke.ivHp !== null && (
                         <span className="flex items-center gap-1"><Heart className="w-3 h-3 text-emerald-600" /> Hp: {poke.ivHp}</span>
                       )}
+                    </div>
+                  )}
+                  {(poke.isDynamax || poke.isGigantamax) && (
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px] font-black text-rose-900 bg-rose-50 border border-rose-200 rounded-xl px-2.5 py-1">
+                      <span>⚔️ {poke.maxAttackMove || 'Ataque Max'}: {poke.maxAttackLevel === 3 ? 'MÁX' : `Nv.${poke.maxAttackLevel ?? 1}`}</span>
+                      <span>🛡️ Barrera: {poke.maxGuardLevel ? (poke.maxGuardLevel === 3 ? 'MÁX' : `Nv.${poke.maxGuardLevel}`) : 'Bloq.'}</span>
+                      <span>💚 Espíritu: {poke.maxSpiritLevel ? (poke.maxSpiritLevel === 3 ? 'MÁX' : `Nv.${poke.maxSpiritLevel}`) : 'Bloq.'}</span>
                     </div>
                   )}
                 </div>

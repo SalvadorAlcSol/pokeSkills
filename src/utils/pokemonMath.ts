@@ -1,5 +1,5 @@
 import { PokemonType } from '../data/pokemonData';
-import { getCPM, POGO_TYPE_CHART, PogoMove } from '../data/pogoDatabase';
+import { getCPM, POGO_DATABASE, POGO_TYPE_CHART, PogoMove } from '../data/pogoDatabase';
 
 export interface PogoDamageResult {
   moveName: string;
@@ -125,6 +125,117 @@ export function calculatePogoPokemonCp(
   const sta = Math.sqrt(baseStamina + ivHp);
   const cp = Math.floor((atk * def * sta * (cpm * cpm)) / 10);
   return Math.max(10, cp);
+}
+
+/**
+ * Solves the exact Pokémon GO level (1.0 - 51.0 in 0.5 steps) given base stats, target CP, and IVs.
+ */
+export function solvePokemonLevelFromCp(
+  baseAttack: number,
+  baseDefense: number,
+  baseStamina: number,
+  targetCp: number,
+  ivAtk: number = 15,
+  ivDef: number = 15,
+  ivHp: number = 15
+): number {
+  if (!targetCp || targetCp <= 10) return 1;
+
+  let bestLevel = 40;
+  let minDiff = Infinity;
+
+  for (let lvl = 1; lvl <= 51; lvl += 0.5) {
+    const cp = calculatePogoPokemonCp(
+      baseAttack,
+      baseDefense,
+      baseStamina,
+      lvl,
+      ivAtk,
+      ivDef,
+      ivHp
+    );
+    const diff = Math.abs(cp - targetCp);
+    if (diff < minDiff) {
+      minDiff = diff;
+      bestLevel = lvl;
+      if (diff === 0) break;
+    }
+  }
+
+  return bestLevel;
+}
+
+/**
+ * Looks up base stats for a species or special form in POGO_DATABASE and solves exact level from CP + IVs.
+ */
+export function inferExactLevelForSpecies(
+  speciesNameOrId: string,
+  targetCp: number,
+  ivAtk?: number | null,
+  ivDef?: number | null,
+  ivHp?: number | null
+): number {
+  if (!targetCp || targetCp <= 10) return 1;
+
+  const clean = String(speciesNameOrId || '').trim().toLowerCase();
+  const cleanAlnum = clean.replace(/[^a-z0-9]/g, '');
+
+  let baseAtk: number | null = null;
+  let baseDef: number | null = null;
+  let baseSta: number | null = null;
+
+  for (const p of POGO_DATABASE) {
+    const forms = p.specialForms || p.megaForms;
+    if (forms) {
+      const formMatch = forms.find(
+        (f) =>
+          `${p.id}-${f.id}`.toLowerCase() === clean ||
+          f.id.toLowerCase() === clean ||
+          f.name.toLowerCase() === clean ||
+          f.name.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlnum
+      );
+      if (formMatch) {
+        baseAtk = formMatch.baseAttack;
+        baseDef = formMatch.baseDefense;
+        baseSta = formMatch.baseStamina;
+        break;
+      }
+    }
+
+    if (
+      p.id.toString() === clean ||
+      p.name.toLowerCase() === clean ||
+      p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlnum
+    ) {
+      baseAtk = p.baseAttack;
+      baseDef = p.baseDefense;
+      baseSta = p.baseStamina;
+      break;
+    }
+  }
+
+  if (baseAtk !== null && baseDef !== null && baseSta !== null) {
+    return solvePokemonLevelFromCp(
+      baseAtk,
+      baseDef,
+      baseSta,
+      targetCp,
+      ivAtk ?? 15,
+      ivDef ?? 15,
+      ivHp ?? 15
+    );
+  }
+
+  // Fallback rough estimate if species was not matched in POGO_DATABASE
+  if (targetCp >= 4000) return 50;
+  if (targetCp >= 3500) return 45;
+  if (targetCp >= 3000) return 40;
+  if (targetCp >= 2500) return 35;
+  if (targetCp >= 2000) return 30;
+  if (targetCp >= 1500) return 25;
+  if (targetCp >= 1000) return 20;
+  if (targetCp >= 500) return 15;
+  return 10;
 }
 
 /**

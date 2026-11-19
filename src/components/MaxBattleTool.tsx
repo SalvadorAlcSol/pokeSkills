@@ -53,6 +53,8 @@ import {
   MaxRosterEntry,
   MaxSupportLevel,
   MaxUnitRole,
+  OFFICIAL_GMAX_SPECIES_IDS,
+  OFFICIAL_MAX_ELIGIBLE_IDS,
   resolvePokemonMaxMove,
   simulateMaxBattleCycle,
 } from '../utils/maxBattleMath';
@@ -112,13 +114,14 @@ const POPULAR_MAX_BOSSES: Array<{ pokemonId: number; isGmax: boolean; label: str
   { pokemonId: 131, isGmax: true, label: 'Lapras G-Max' },
   { pokemonId: 143, isGmax: true, label: 'Snorlax G-Max' },
   { pokemonId: 68, isGmax: true, label: 'Machamp G-Max' },
-  { pokemonId: 892, isGmax: true, label: 'Urshifu G-Max' },
+  { pokemonId: 12, isGmax: true, label: 'Butterfree G-Max' },
+  { pokemonId: 99, isGmax: true, label: 'Kingler G-Max' },
+  { pokemonId: 376, isGmax: false, label: 'Metagross D-Max' },
   { pokemonId: 145, isGmax: false, label: 'Zapdos D-Max' },
   { pokemonId: 146, isGmax: false, label: 'Moltres D-Max' },
   { pokemonId: 144, isGmax: false, label: 'Articuno D-Max' },
   { pokemonId: 243, isGmax: false, label: 'Raikou D-Max' },
   { pokemonId: 530, isGmax: false, label: 'Excadrill D-Max' },
-  { pokemonId: 890, isGmax: false, label: 'Eternatus' },
 ];
 
 function createDefaultUnitFromEntry(
@@ -757,18 +760,24 @@ export const MaxBattleTool: React.FC<MaxBattleToolProps> = ({ onBackToHub }) => 
     }> = [];
 
     for (const p of POGO_DATABASE) {
+      const isOfficialGMax = OFFICIAL_GMAX_SPECIES_IDS.has(p.id);
+      const isOfficialDMax = OFFICIAL_MAX_ELIGIBLE_IDS.has(p.id);
+
       if (GIGANTAMAX_SPECIES[p.id]) {
-        const gSpec = GIGANTAMAX_SPECIES[p.id][0];
-        entries.push({
-          key: `${p.id}-gmax`,
-          pokemon: p,
-          isGmax: true,
-          label: gSpec.labelEs,
-          types: gSpec.overrideTypes || p.types,
-          spriteUrl: p.spriteUrl,
-        });
+        if (isOfficialGMax || includeAllPokedex) {
+          const gSpec = GIGANTAMAX_SPECIES[p.id][0];
+          entries.push({
+            key: `${p.id}-gmax`,
+            pokemon: p,
+            isGmax: true,
+            label: isOfficialGMax ? gSpec.labelEs : `${gSpec.labelEs} (Teórico)`,
+            types: gSpec.overrideTypes || p.types,
+            spriteUrl: p.spriteUrl,
+          });
+        }
       }
-      if (p.id === 888 || p.id === 889) {
+
+      if ((p.id === 888 || p.id === 889) && includeAllPokedex) {
         const crowned = (p.specialForms || []).find(
           (f) => f.id === 'zacian_crowned' || f.id === 'zamazenta_crowned'
         );
@@ -778,20 +787,28 @@ export const MaxBattleTool: React.FC<MaxBattleToolProps> = ({ onBackToHub }) => 
             pokemon: p,
             formId: crowned.id,
             isGmax: false,
-            label: crowned.name,
+            label: `${crowned.name} (Teórico)`,
             types: crowned.types,
             spriteUrl: crowned.spriteUrl,
           });
         }
       }
-      entries.push({
-        key: `${p.id}-dmax`,
-        pokemon: p,
-        isGmax: false,
-        label: p.id === 890 ? 'Eternatus' : `${p.name} (Dinamax)`,
-        types: p.types,
-        spriteUrl: p.spriteUrl,
-      });
+
+      if (isOfficialDMax || p.id === 890 || includeAllPokedex) {
+        entries.push({
+          key: `${p.id}-dmax`,
+          pokemon: p,
+          isGmax: false,
+          label:
+            p.id === 890
+              ? 'Eternatus'
+              : isOfficialDMax
+              ? `${p.name} (Dinamax)`
+              : `${p.name} (Dinamax Teórico)`,
+          types: p.types,
+          spriteUrl: p.spriteUrl,
+        });
+      }
     }
 
     const q = bossSearch.toLowerCase().trim();
@@ -803,7 +820,7 @@ export const MaxBattleTool: React.FC<MaxBattleToolProps> = ({ onBackToHub }) => 
         return l.includes(q) || l.replace(/[\s\-_]+/g, '').includes(cleanQ);
       })
       .slice(0, 35);
-  }, [bossSearch]);
+  }, [bossSearch, includeAllPokedex]);
 
   const handleSelectBoss = (p: PogoPokemon, opts?: { formId?: string; isGmax?: boolean }) => {
     setBoss(

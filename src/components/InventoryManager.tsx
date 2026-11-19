@@ -3,6 +3,7 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { PokeGenieImporter } from './PokeGenieImporter';
 import { VideoScanner } from './VideoScanner';
 import { ScreenshotScanner } from './ScreenshotScanner';
+import { LivePhoneLinkScanner } from './LivePhoneLinkScanner';
 import { PokemonDetailModal } from './PokemonDetailModal';
 import { DuplicateVerifier } from './DuplicateVerifier';
 import {
@@ -29,6 +30,8 @@ import {
   ArrowDown,
   Info,
   Image,
+  Smartphone,
+  Flame,
 } from 'lucide-react';
 import { POGO_DATABASE } from '../data/pogoDatabase';
 import {
@@ -55,11 +58,11 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
   } = useInventoryStore();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'mega' | 'shadow' | 'perfect'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'mega' | 'max' | 'shadow' | 'perfect' | 'shiny'>('all');
   const [sortBy, setSortBy] = useState<'cp' | 'pokedex' | 'hp' | 'date'>('cp');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importTab, setImportTab] = useState<'video' | 'images' | 'csv'>('images');
+  const [importTab, setImportTab] = useState<'live' | 'video' | 'images' | 'csv'>('live');
   const [importMode, setImportMode] = useState<'merge' | 'overwrite' | 'append'>('merge');
   const [verificationList, setVerificationList] = useState<any[] | null>(null);
 
@@ -133,6 +136,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
     const ivPct = Math.round(((pokemon.ivAtk + pokemon.ivDef + pokemon.ivHp) / 45) * 100);
 
     if (filterType === 'mega') return Boolean(pokemon.canMegaEvolve);
+    if (filterType === 'max') return Boolean(pokemon.isDynamax || pokemon.isGigantamax);
     if (filterType === 'shadow') return Boolean(pokemon.isShadow);
     if (filterType === 'perfect') return ivPct === 100;
     if (filterType === 'shiny') return Boolean(pokemon.isShiny);
@@ -162,6 +166,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
     (p) => Math.round(((p.ivAtk + p.ivDef + p.ivHp) / 45) * 100) === 100
   ).length;
   const megaCount = inventory.filter((p) => p.canMegaEvolve).length;
+  const maxCount = inventory.filter((p) => p.isDynamax || p.isGigantamax).length;
   const shadowCount = inventory.filter((p) => p.isShadow).length;
   const shinyCount = inventory.filter((p) => p.isShiny).length;
 
@@ -201,6 +206,17 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                setImportTab('live');
+                setShowImportModal(true);
+              }}
+              className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-black rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-xs border border-purple-500"
+            >
+              <Smartphone className="w-4 h-4 text-yellow-300" />
+              <span>Escaneo Auto (Enlace Móvil)</span>
+            </button>
+
             <button
               onClick={() => setShowImportModal(true)}
               className="px-3.5 py-2 bg-yellow-400 hover:bg-yellow-300 text-red-950 font-black rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-xs border border-yellow-500"
@@ -308,6 +324,16 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
               }`}
             >
               💎 Mega Listos ({megaCount})
+            </button>
+            <button
+              onClick={() => setFilterType('max')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 ${
+                filterType === 'max'
+                  ? 'bg-rose-600 text-white border-rose-700 font-extrabold shadow-sm'
+                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 font-extrabold'
+              }`}
+            >
+              💥 Dinamax / Gigamax ({maxCount})
             </button>
             <button
               onClick={() => setFilterType('shadow')}
@@ -510,7 +536,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
       {/* Modal for Importing Pokémon */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative custom-scrollbar">
+          <div className="bg-white border-2 border-slate-200 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative custom-scrollbar">
             <button
               onClick={() => setShowImportModal(false)}
               className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
@@ -536,10 +562,21 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
             ) : (
               <>
                 {/* Import Tab Switcher */}
-                <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl mb-6 border border-slate-200">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100 rounded-2xl mb-6 border border-slate-200">
+                  <button
+                    onClick={() => setImportTab('live')}
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                      importTab === 'live'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>📱 Enlace Móvil (Auto)</span>
+                  </button>
                   <button
                     onClick={() => setImportTab('images')}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                       importTab === 'images'
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
@@ -550,7 +587,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
                   </button>
                   <button
                     onClick={() => setImportTab('video')}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                       importTab === 'video'
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
@@ -561,7 +598,7 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
                   </button>
                   <button
                     onClick={() => setImportTab('csv')}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                       importTab === 'csv'
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
@@ -620,6 +657,20 @@ export const InventoryManager: React.FC<{ onBackToHub: () => void }> = ({ onBack
                   </p>
                 </div>
 
+                {importTab === 'live' && (
+                  <LivePhoneLinkScanner
+                    onComplete={() => setShowImportModal(false)}
+                    importMode={importMode}
+                    onImportRequest={(list) => {
+                      if (importMode === 'merge' && checkForDuplicates(list, inventory)) {
+                        setVerificationList(list);
+                      } else {
+                        importPokemons(list, importMode);
+                        setShowImportModal(false);
+                      }
+                    }}
+                  />
+                )}
                 {importTab === 'images' && (
                   <ScreenshotScanner
                     onComplete={() => setShowImportModal(false)}
@@ -832,6 +883,36 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
           </span>
         )}
 
+        {pokemon.isLucky && (
+          <span className="text-[10px] bg-yellow-100 text-yellow-900 border border-yellow-300 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
+            🍀 Suerte
+          </span>
+        )}
+
+        {(pokemon.isBestBuddy || pokemon.buddyLevel === 4) && (
+          <span className="text-[10px] bg-gradient-to-r from-amber-500 to-red-500 text-white border border-amber-600 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
+            🎖️ Mejor Compañero
+          </span>
+        )}
+
+        {!pokemon.isBestBuddy && pokemon.buddyLevel !== undefined && pokemon.buddyLevel > 0 && pokemon.buddyLevel < 4 && (
+          <span className="text-[10px] bg-orange-100 text-orange-900 border border-orange-300 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
+            🧡 Compañero Nv.{pokemon.buddyLevel}
+          </span>
+        )}
+
+        {pokemon.isGigantamax && (
+          <span className="text-[10px] bg-gradient-to-r from-rose-600 to-fuchsia-600 text-white border border-rose-700 px-2.5 py-0.5 rounded-xl font-black shadow-2xs flex items-center gap-1">
+            <Flame className="w-3 h-3" /> GIGAMAX
+          </span>
+        )}
+
+        {!pokemon.isGigantamax && pokemon.isDynamax && (
+          <span className="text-[10px] bg-pink-600 text-white border border-pink-700 px-2.5 py-0.5 rounded-xl font-black shadow-2xs">
+            💥 DINAMAX
+          </span>
+        )}
+
         {activeMegaForm && (
           <span className="text-[10px] bg-pink-600 text-white px-2.5 py-0.5 rounded-full font-extrabold shadow-xs">
             ⚡ Mega Simulación
@@ -935,6 +1016,48 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
             )}
           </div>
         </div>
+
+        {(pokemon.isDynamax || pokemon.isGigantamax) && (
+          <div className="pt-2 mt-1 border-t border-slate-200 space-y-1">
+            <span className="block text-[10px] font-black text-rose-700 uppercase tracking-wider">
+              💥 Movimientos Max {pokemon.maxAttackMove ? `(${pokemon.maxAttackMove})` : ''}
+            </span>
+            <div className="grid grid-cols-3 gap-1.5 text-[10px] font-black text-center">
+              <div className="bg-rose-100 text-rose-900 border border-rose-200 rounded-lg py-1 px-1">
+                ⚔️ Ataque: {pokemon.maxAttackLevel === 3 ? 'MÁX' : `Nv.${pokemon.maxAttackLevel ?? 1}`}
+              </div>
+              <div className="bg-blue-100 text-blue-900 border border-blue-200 rounded-lg py-1 px-1">
+                🛡️ Barrera:{' '}
+                {pokemon.maxGuardLevel
+                  ? pokemon.maxGuardLevel === 3
+                    ? 'MÁX'
+                    : `Nv.${pokemon.maxGuardLevel}`
+                  : 'Bloq.'}
+              </div>
+              <div className="bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-lg py-1 px-1">
+                💚 Espíritu:{' '}
+                {pokemon.maxSpiritLevel
+                  ? pokemon.maxSpiritLevel === 3
+                    ? 'MÁX'
+                    : `Nv.${pokemon.maxSpiritLevel}`
+                  : 'Bloq.'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(pokemon.candy !== undefined || pokemon.candyXl !== undefined) && (
+          <div className="pt-2 mt-1 border-t border-slate-200 grid grid-cols-2 gap-1.5 text-[10px] font-black">
+            <div className="bg-amber-50 text-amber-900 border border-amber-200 rounded-lg py-1 px-2 flex items-center justify-between">
+              <span>🍬 Caramelos:</span>
+              <span>{pokemon.candy !== undefined ? pokemon.candy.toLocaleString() : '—'}</span>
+            </div>
+            <div className="bg-indigo-50 text-indigo-900 border border-indigo-200 rounded-lg py-1 px-2 flex items-center justify-between">
+              <span>🔺 Caramelos ++:</span>
+              <span>{pokemon.candyXl !== undefined ? pokemon.candyXl.toLocaleString() : '—'}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Interactive Controls & Mega Simulation */}
@@ -966,20 +1089,50 @@ const PokemonInventoryCard: React.FC<PokemonInventoryCardProps> = ({
           </div>
         )}
 
-        {/* Mega Ready Status Toggle ONLY IF species actually can Mega evolve */}
-        {allMegaForms.length > 0 && (
-          <div className="flex items-center justify-between gap-2 text-xs pt-1">
-            <button
-              onClick={() => onUpdate({ canMegaEvolve: !pokemon.canMegaEvolve })}
-              className={`w-full py-1.5 px-2 rounded-xl border text-[11px] font-extrabold transition-all flex items-center justify-center gap-1 ${
-                pokemon.canMegaEvolve
-                  ? 'bg-pink-600 text-white border-pink-700 shadow-sm'
-                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-              }`}
-              title="Toca para marcar si tiene la Mega Desbloqueada"
-            >
-              💎 {pokemon.canMegaEvolve ? `Mega Nivel ${pokemon.megaLevel ?? 3}` : 'Sin Mega'}
-            </button>
+        {/* Mega Ready Status Toggle & Mega Energy ONLY IF species actually can Mega evolve and is not Shadow */}
+        {allMegaForms.length > 0 && !pokemon.isShadow && (
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <button
+                onClick={() =>
+                  onUpdate({
+                    canMegaEvolve: !pokemon.canMegaEvolve,
+                    megaLevel: !pokemon.canMegaEvolve ? pokemon.megaLevel || 3 : 0,
+                  })
+                }
+                className={`w-full py-1.5 px-2 rounded-xl border text-[11px] font-extrabold transition-all flex items-center justify-center gap-1 ${
+                  pokemon.canMegaEvolve
+                    ? 'bg-pink-600 text-white border-pink-700 shadow-sm'
+                    : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                }`}
+                title="Toca para marcar si ya fue megaevolucionado antes"
+              >
+                {pokemon.canMegaEvolve
+                  ? `💎 Mega Nivel ${pokemon.megaLevel || 3}`
+                  : `🔒 Sin Mega previa${pokemon.megaEvolveCost ? ` (Pide ${pokemon.megaEvolveCost})` : ''}`}
+              </button>
+            </div>
+
+            {pokemon.megaEnergy !== undefined && (
+              <div
+                className={`w-full py-1 px-2.5 rounded-xl border text-[11px] font-extrabold flex items-center justify-between gap-1.5 ${
+                  !pokemon.canMegaEvolve &&
+                  pokemon.megaEvolveCost !== undefined &&
+                  pokemon.megaEnergy >= pokemon.megaEvolveCost
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                    : 'bg-pink-50 text-pink-900 border-pink-200'
+                }`}
+              >
+                <span>🧬 {pokemon.megaEnergy.toLocaleString()} Energía Mega</span>
+                {!pokemon.canMegaEvolve &&
+                  pokemon.megaEvolveCost !== undefined &&
+                  pokemon.megaEnergy >= pokemon.megaEvolveCost && (
+                    <span className="bg-emerald-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                      ¡Listo para 1ª Mega!
+                    </span>
+                  )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1022,6 +1175,24 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
   const [canMegaEvolve, setCanMegaEvolve] = useState(Boolean(pokemon.canMegaEvolve));
   const [unlockedMegaForm, setUnlockedMegaForm] = useState(pokemon.unlockedMegaForm || (allMegaForms[0]?.id || ''));
   const [megaLevel, setMegaLevel] = useState<number>(pokemon.megaLevel ?? (pokemon.canMegaEvolve ? 3 : 0));
+  const [megaEnergy, setMegaEnergy] = useState<string>(
+    pokemon.megaEnergy !== undefined ? String(pokemon.megaEnergy) : ''
+  );
+  const [candy, setCandy] = useState<string>(
+    pokemon.candy !== undefined ? String(pokemon.candy) : ''
+  );
+  const [candyXl, setCandyXl] = useState<string>(
+    pokemon.candyXl !== undefined ? String(pokemon.candyXl) : ''
+  );
+  const [buddyLevel, setBuddyLevel] = useState<0 | 1 | 2 | 3 | 4>(
+    (pokemon.buddyLevel ?? (pokemon.isBestBuddy ? 4 : 0)) as 0 | 1 | 2 | 3 | 4
+  );
+  const [isDynamax, setIsDynamax] = useState(Boolean(pokemon.isDynamax || pokemon.isGigantamax));
+  const [isGigantamax, setIsGigantamax] = useState(Boolean(pokemon.isGigantamax));
+  const [maxAttackMove, setMaxAttackMove] = useState(pokemon.maxAttackMove || '');
+  const [maxAttackLevel, setMaxAttackLevel] = useState<1 | 2 | 3>(pokemon.maxAttackLevel ?? 1);
+  const [maxGuardLevel, setMaxGuardLevel] = useState<0 | 1 | 2 | 3>(pokemon.maxGuardLevel ?? 0);
+  const [maxSpiritLevel, setMaxSpiritLevel] = useState<0 | 1 | 2 | 3>(pokemon.maxSpiritLevel ?? 0);
 
   const activeFormOpt =
     availableForms.find((f) => f.speciesId === selectedFormSpeciesId) || currentFormOpt;
@@ -1053,6 +1224,20 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
       canMegaEvolve: allMegaForms.length > 0 ? canMegaEvolve : false,
       unlockedMegaForm: allMegaForms.length > 0 && canMegaEvolve ? unlockedMegaForm : undefined,
       megaLevel: allMegaForms.length > 0 && canMegaEvolve ? megaLevel : 0,
+      megaEnergy:
+        allMegaForms.length > 0 && megaEnergy.trim() !== ''
+          ? Math.max(0, parseInt(megaEnergy, 10) || 0)
+          : undefined,
+      candy: candy.trim() !== '' ? Math.max(0, parseInt(candy, 10) || 0) : undefined,
+      candyXl: candyXl.trim() !== '' ? Math.max(0, parseInt(candyXl, 10) || 0) : undefined,
+      buddyLevel,
+      isBestBuddy: buddyLevel === 4,
+      isDynamax: isDynamax || isGigantamax,
+      isGigantamax,
+      maxAttackMove: (isDynamax || isGigantamax) && maxAttackMove.trim() ? maxAttackMove.trim() : undefined,
+      maxAttackLevel: isDynamax || isGigantamax ? maxAttackLevel : undefined,
+      maxGuardLevel: isDynamax || isGigantamax ? maxGuardLevel : undefined,
+      maxSpiritLevel: isDynamax || isGigantamax ? maxSpiritLevel : undefined,
     });
     onClose();
   };
@@ -1260,6 +1445,57 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
             </select>
           </div>
 
+          {/* Candy, Candy XL & Buddy Level Settings */}
+          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3">
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-amber-900 text-[11px] font-extrabold mb-1">
+                  🍬 Caramelos Normales:
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={999999}
+                  value={candy}
+                  onChange={(e) => setCandy(e.target.value)}
+                  placeholder="Ej. 450"
+                  className="w-full p-2 bg-white border border-amber-300 rounded-xl text-slate-900 font-extrabold outline-none text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-indigo-900 text-[11px] font-extrabold mb-1">
+                  🔺 Caramelos ++ (XL):
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={999999}
+                  value={candyXl}
+                  onChange={(e) => setCandyXl(e.target.value)}
+                  placeholder="Ej. 296"
+                  className="w-full p-2 bg-white border border-indigo-300 rounded-xl text-slate-900 font-extrabold outline-none text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-orange-900 text-[11px] font-extrabold mb-1">
+                🧡 Nivel de Compañero (Buddy):
+              </label>
+              <select
+                value={buddyLevel}
+                onChange={(e) => setBuddyLevel(Number(e.target.value) as 0 | 1 | 2 | 3 | 4)}
+                className="w-full p-2 bg-white border border-orange-300 rounded-xl text-slate-900 font-extrabold outline-none text-xs"
+              >
+                <option value={0}>Sin compañero (0 ❤️)</option>
+                <option value={1}>❤️ Buen Compañero (Nivel 1)</option>
+                <option value={2}>❤️❤️ Gran Compañero (Nivel 2)</option>
+                <option value={3}>❤️❤️❤️ Ultracompañero (Nivel 3)</option>
+                <option value={4}>🎖️ Mejor Compañero / Best Buddy (Nivel 4 + Cinta)</option>
+              </select>
+            </div>
+          </div>
+
           {/* Mega Unlock Settings (ONLY if species can Mega evolve) */}
           {allMegaForms.length > 0 && (
             <div className="p-3.5 bg-pink-50 border border-pink-200 rounded-2xl space-y-3">
@@ -1273,8 +1509,29 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
                 <input
                   type="checkbox"
                   checked={canMegaEvolve}
-                  onChange={(e) => setCanMegaEvolve(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setCanMegaEvolve(checked);
+                    if (checked && megaLevel === 0) {
+                      setMegaLevel(1);
+                    }
+                  }}
                   className="w-5 h-5 accent-pink-600 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-pink-800 text-[11px] font-extrabold mb-1">
+                  🧬 Caramelos / Megaenergía Acumulada:
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={99999}
+                  value={megaEnergy}
+                  onChange={(e) => setMegaEnergy(e.target.value)}
+                  placeholder="Ej. 350 (opcional)"
+                  className="w-full p-2 bg-white border border-pink-300 rounded-xl text-slate-900 font-extrabold outline-none text-xs"
                 />
               </div>
 
@@ -1319,6 +1576,103 @@ const EditPokemonModal: React.FC<EditPokemonModalProps> = ({ pokemon, onClose, o
               )}
             </div>
           )}
+
+          {/* Dynamax / Gigantamax Settings */}
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isDynamax}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsDynamax(checked);
+                    if (!checked) setIsGigantamax(false);
+                  }}
+                  className="w-4 h-4 accent-rose-600 cursor-pointer"
+                />
+                <span className="text-rose-900 font-extrabold">💥 Factor Dinamax</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isGigantamax}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsGigantamax(checked);
+                    if (checked) setIsDynamax(true);
+                  }}
+                  className="w-4 h-4 accent-fuchsia-600 cursor-pointer"
+                />
+                <span className="text-fuchsia-900 font-extrabold">🌋 Factor Gigamax (G-Max)</span>
+              </label>
+            </div>
+
+            {(isDynamax || isGigantamax) && (
+              <div className="space-y-2.5 pt-2 border-t border-rose-200">
+                <div>
+                  <label className="block text-rose-900 text-[11px] font-extrabold mb-1">
+                    Nombre del Movimiento Max / G-Max (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    value={maxAttackMove}
+                    onChange={(e) => setMaxAttackMove(e.target.value)}
+                    placeholder="Ej. G-Max Wildfire o Max Flare"
+                    className="w-full p-2 bg-white border border-rose-300 rounded-xl text-slate-900 font-bold text-xs outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-rose-900 text-[10px] font-extrabold mb-1">
+                      ⚔️ Ataque Max
+                    </label>
+                    <select
+                      value={maxAttackLevel}
+                      onChange={(e) => setMaxAttackLevel(Number(e.target.value) as 1 | 2 | 3)}
+                      className="w-full p-2 bg-white border border-rose-300 rounded-xl text-slate-900 font-extrabold text-xs"
+                    >
+                      <option value={1}>Nivel 1</option>
+                      <option value={2}>Nivel 2</option>
+                      <option value={3}>MÁX (Nv. 3)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-blue-900 text-[10px] font-extrabold mb-1">
+                      🛡️ Maxibarrera
+                    </label>
+                    <select
+                      value={maxGuardLevel}
+                      onChange={(e) => setMaxGuardLevel(Number(e.target.value) as 0 | 1 | 2 | 3)}
+                      className="w-full p-2 bg-white border border-blue-300 rounded-xl text-slate-900 font-extrabold text-xs"
+                    >
+                      <option value={0}>Bloqueado</option>
+                      <option value={1}>Nivel 1</option>
+                      <option value={2}>Nivel 2</option>
+                      <option value={3}>MÁX (Nv. 3)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-emerald-900 text-[10px] font-extrabold mb-1">
+                      💚 Maxiespíritu
+                    </label>
+                    <select
+                      value={maxSpiritLevel}
+                      onChange={(e) => setMaxSpiritLevel(Number(e.target.value) as 0 | 1 | 2 | 3)}
+                      className="w-full p-2 bg-white border border-emerald-300 rounded-xl text-slate-900 font-extrabold text-xs"
+                    >
+                      <option value={0}>Bloqueado</option>
+                      <option value={1}>Nivel 1</option>
+                      <option value={2}>Nivel 2</option>
+                      <option value={3}>MÁX (Nv. 3)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 mt-6">
