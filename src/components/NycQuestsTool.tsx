@@ -41,6 +41,8 @@ import {
   fetchNycQuestsByFilters,
   formatCoordsForPgsharp,
   getQuestStopKey,
+  extractVisitedCoordSet,
+  isQuestVisited,
   generateOptimalNycRoute,
   generateNycRouteGPX,
   POPULAR_PRESET_FILTERS
@@ -522,12 +524,42 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     writeStorage(NYC_STORAGE_KEYS.ROUTE_COUNT, routeTargetCount);
   }, [routeTargetCount]);
 
-  // Registro de paradas ya copiadas / teletransportadas
+  // Conjunto de coordenadas normalizadas a 5 decimales (~1.1 m) de todas las paradas visitadas
+  const visitedCoordSet = useMemo(() => extractVisitedCoordSet(visitedStops), [visitedStops]);
+
+  const checkQuestVisited = useCallback(
+    (quest: NycQuest) => isQuestVisited(quest, visitedStops, visitedCoordSet),
+    [visitedStops, visitedCoordSet]
+  );
+
+  // Registro de paradas ya copiadas / teletransportadas (individual o por lote)
   const markAsVisited = useCallback((key: string) => {
     setVisitedStops(prev => {
       if (prev.has(key)) return prev;
       const updated = new Set(prev);
       updated.add(key);
+      try {
+        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(Array.from(updated)));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  }, []);
+
+  const markQuestsAsVisited = useCallback((questsToMark: NycQuest[]) => {
+    if (!questsToMark.length) return;
+    setVisitedStops(prev => {
+      const updated = new Set(prev);
+      let changed = false;
+      for (const q of questsToMark) {
+        const key = getQuestStopKey(q);
+        if (!updated.has(key)) {
+          updated.add(key);
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
       try {
         localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(Array.from(updated)));
       } catch (e) {
@@ -700,17 +732,16 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       }
 
       if (hideVisited) {
-        const stopKey = getQuestStopKey(q);
-        if (visitedStops.has(stopKey)) return false;
+        if (checkQuestVisited(q)) return false;
       }
 
       return true;
     });
-  }, [quests, searchTerm, selectedCondition, selectedReward, hideVisited, visitedStops]);
+  }, [quests, searchTerm, selectedCondition, selectedReward, hideVisited, checkQuestVisited]);
 
   const unvisitedFilteredCount = useMemo(() => {
-    return filteredQuests.filter(q => !visitedStops.has(getQuestStopKey(q))).length;
-  }, [filteredQuests, visitedStops]);
+    return filteredQuests.filter(q => !checkQuestVisited(q)).length;
+  }, [filteredQuests, checkQuestVisited]);
 
   // Generación de ruta óptima
   const handleGenerateRoute = useCallback(
@@ -720,13 +751,33 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       originCoords?: { lat: number; lng: number } | null;
       originLabel?: string;
       openHud?: boolean;
+      markPrevRouteAllVisited?: boolean;
     }) => {
       setRouteError(null);
       const effectiveMode = overrides?.mode ?? originMode;
 
+      // Consolidar sincrónicamente todas las paradas ya visitadas (incluyendo las ya recorridas en la ruta activa)
+      const effectiveVisited = new Set<string>(visitedStops);
+      let visitedAdded = false;
+      if (activeRoute && activeRoute.stops.length > 0 && excludeVisitedOnRoute) {
+        const uptoIdx = overrides?.markPrevRouteAllVisited
+          ? activeRoute.stops.length - 1
+          : routeCurrentIdx;
+        for (let i = 0; i <= Math.min(uptoIdx, activeRoute.stops.length - 1); i++) {
+          const k = getQuestStopKey(activeRoute.stops[i].quest);
+          if (!effectiveVisited.has(k)) {
+            effectiveVisited.add(k);
+            visitedAdded = true;
+          }
+        }
+      }
+      const effectiveVisitedCoords = extractVisitedCoordSet(effectiveVisited);
+
       let pool = filteredQuests;
       if (excludeVisitedOnRoute) {
-        pool = filteredQuests.filter(q => !visitedStops.has(getQuestStopKey(q)));
+        pool = filteredQuests.filter(
+          q => !isQuestVisited(q, effectiveVisited, effectiveVisitedCoords)
+        );
       }
 
       const explicitOriginQuest =
@@ -734,20 +785,21 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           ? overrides.originQuest
           : selectedQuest || lastCopiedQuest;
 
-      // Si el usuario inicia ruta explícitamente desde una parada concreta, incluirla si no está oculta por otro filtro
+      // Si el usuario inicia ruta explícitamente desde una parada concreta NO visitada, incluirla
       if (
         effectiveMode === 'last_stop' &&
         explicitOriginQuest &&
         overrides?.originQuest &&
         !pool.some(q => getQuestStopKey(q) === getQuestStopKey(explicitOriginQuest)) &&
-        !visitedStops.has(getQuestStopKey(explicitOriginQuest))
+        (!excludeVisitedOnRoute ||
+          !isQuestVisited(explicitOriginQuest, effectiveVisited, effectiveVisitedCoords))
       ) {
         pool = [explicitOriginQuest, ...pool];
       }
 
       if (pool.length === 0) {
         setRouteError(
-          'No hay paradas pendientes con los filtros actuales. Desmarca "Omitir ya visitadas" o cambia los filtros.'
+          'No hay paradas pendientes sin visitar con los filtros actuales. Desmarca "Omitir ya visitadas" o cambia los filtros.'
         );
         return;
       }
@@ -788,6 +840,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         originQuest: effectiveMode === 'last_stop' ? explicitOriginQuest : null,
         originCoords: resolvedCoords,
         originLabel: resolvedLabel,
+        excludedStopKeys: excludeVisitedOnRoute ? effectiveVisited : undefined,
       });
 
       if (generated.stops.length === 0) {
@@ -795,9 +848,28 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         return;
       }
 
+      // Marcar inmediatamente la Parada #1 de la nueva ruta como visitada para que jamás quede suelta
+      const firstStopKey = getQuestStopKey(generated.stops[0].quest);
+      if (!effectiveVisited.has(firstStopKey)) {
+        effectiveVisited.add(firstStopKey);
+        visitedAdded = true;
+      }
+      if (visitedAdded) {
+        setVisitedStops(effectiveVisited);
+        try {
+          localStorage.setItem(
+            NYC_STORAGE_KEYS.VISITED_STOPS,
+            JSON.stringify(Array.from(effectiveVisited))
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       setActiveRoute(generated);
       setRouteCurrentIdx(0);
       setSelectedQuest(generated.stops[0].quest);
+      setLastCopiedQuest(generated.stops[0].quest);
       setIsPickingOriginOnMap(false);
       setIsRoutePlannerOpen(false);
       if (overrides?.openHud) {
@@ -827,6 +899,8 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       filteredQuests,
       excludeVisitedOnRoute,
       visitedStops,
+      activeRoute,
+      routeCurrentIdx,
       selectedQuest,
       lastCopiedQuest,
       mapPickCoords,
@@ -844,29 +918,36 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
   const handleCopyCurrentRouteStop = useCallback(async () => {
     if (!currentRouteStop) return;
+    if (activeRoute) {
+      markQuestsAsVisited(
+        activeRoute.stops.slice(0, routeCurrentIdx + 1).map(s => s.quest)
+      );
+    }
     await handleCopyCoords(
       currentRouteStop.quest,
       undefined,
       `Parada #${currentRouteStop.stepNumber}`
     );
-  }, [currentRouteStop, handleCopyCoords]);
+  }, [currentRouteStop, activeRoute, routeCurrentIdx, markQuestsAsVisited, handleCopyCoords]);
 
   const handleNextRouteStopAndCopy = useCallback(async () => {
     if (!activeRoute || activeRoute.stops.length === 0) return;
     if (routeCurrentIdx < activeRoute.stops.length - 1) {
       const nextIdx = routeCurrentIdx + 1;
       const stop = activeRoute.stops[nextIdx];
+      markQuestsAsVisited(activeRoute.stops.slice(0, nextIdx + 1).map(s => s.quest));
       setRouteCurrentIdx(nextIdx);
       setSelectedQuest(stop.quest);
       await handleCopyCoords(stop.quest, undefined, `Parada #${stop.stepNumber}`);
     } else if (currentRouteStop) {
+      markQuestsAsVisited(activeRoute.stops.map(s => s.quest));
       await handleCopyCoords(
         currentRouteStop.quest,
         undefined,
         `Última parada (#${currentRouteStop.stepNumber})`
       );
     }
-  }, [activeRoute, routeCurrentIdx, currentRouteStop, handleCopyCoords]);
+  }, [activeRoute, routeCurrentIdx, currentRouteStop, markQuestsAsVisited, handleCopyCoords]);
 
   const handlePrevRouteStopAndCopy = useCallback(async () => {
     if (!activeRoute || activeRoute.stops.length === 0) return;
@@ -896,6 +977,13 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     [activeRoute, handleCopyCoords]
   );
 
+  const handleMarkEntireRouteVisited = useCallback(() => {
+    if (!activeRoute || activeRoute.stops.length === 0) return;
+    markQuestsAsVisited(activeRoute.stops.map(s => s.quest));
+    setCopiedCoords(`✓ ${activeRoute.stops.length} paradas de la ruta marcadas como visitadas`);
+    setTimeout(() => setCopiedCoords(null), 3000);
+  }, [activeRoute, markQuestsAsVisited]);
+
   const handleClearRoute = () => {
     setActiveRoute(null);
     setRouteCurrentIdx(0);
@@ -908,6 +996,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
   const handleDownloadRouteGPX = () => {
     if (!activeRoute || activeRoute.stops.length === 0) return;
+    markQuestsAsVisited(activeRoute.stops.map(s => s.quest));
     const gpx = generateNycRouteGPX(activeRoute.stops);
     const blob = new Blob([gpx], { type: 'application/gpx+xml' });
     const url = URL.createObjectURL(blob);
@@ -922,12 +1011,13 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
   const handleCopyRouteList = async () => {
     if (!activeRoute || activeRoute.stops.length === 0) return;
+    markQuestsAsVisited(activeRoute.stops.map(s => s.quest));
     const list = activeRoute.stops
       .map(s => formatCoordsForPgsharp(s.quest.lat, s.quest.lng))
       .join('\n');
     try {
       await navigator.clipboard.writeText(list);
-      setCopiedCoords(`¡Copiadas ${activeRoute.stops.length} paradas de la ruta!`);
+      setCopiedCoords(`¡Copiadas y marcadas ${activeRoute.stops.length} paradas de la ruta!`);
       setTimeout(() => setCopiedCoords(null), 3000);
     } catch (e) {
       console.error(e);
@@ -1180,7 +1270,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         if (routeStopKeys.has(stopKey)) return; // Se dibuja en la capa superior de ruta
 
         const formattedCoords = formatCoordsForPgsharp(quest.lat, quest.lng);
-        const isVisited = visitedStops.has(stopKey);
+        const isVisited = checkQuestVisited(quest);
         const isSelected =
           selectedQuest?.lat === quest.lat && selectedQuest?.lng === quest.lng;
 
@@ -1308,7 +1398,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
       activeRoute.stops.forEach((stop, idx) => {
         const isCurrent = idx === routeCurrentIdx;
-        const isDoneOrVisited = idx < routeCurrentIdx || visitedStops.has(stop.stopKey);
+        const isDoneOrVisited = checkQuestVisited(stop.quest);
         const icon = createRouteStopDivIcon(stop.stepNumber, isCurrent, isDoneOrVisited);
 
         const marker = L.marker([stop.quest.lat, stop.quest.lng], {
@@ -2019,6 +2109,24 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
                     />
                     <span>Omitir paradas ya visitadas ({visitedStops.size} en historial)</span>
                   </label>
+
+                  {activeRoute && activeRoute.stops.length > 0 && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="font-bold text-emerald-900">
+                        Ruta actual: {activeRoute.stops.filter(s => checkQuestVisited(s.quest)).length}/
+                        {activeRoute.stops.length} paradas marcadas visitadas
+                      </span>
+                      {activeRoute.stops.some(s => !checkQuestVisited(s.quest)) && (
+                        <button
+                          type="button"
+                          onClick={handleMarkEntireRouteVisited}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] cursor-pointer"
+                        >
+                          ✓ Marcar las {activeRoute.stops.length} como visitadas
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {routeError && (
@@ -2088,6 +2196,15 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
                 >
                   {showOnlyRouteStops ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                   <span>{showOnlyRouteStops ? 'Solo ruta' : 'Ver todas'}</span>
+                </button>
+
+                <button
+                  onClick={handleMarkEntireRouteVisited}
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-900/70 hover:bg-emerald-800 border border-emerald-600 text-emerald-100 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  title="Marcar todas las paradas de esta ruta como ya visitadas"
+                >
+                  <Check className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Marcar Visitadas</span>
                 </button>
 
                 <button

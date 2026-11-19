@@ -216,13 +216,59 @@ export interface GenerateNycRouteParams {
   originQuest?: NycQuest | null;
   originMode: NycRouteOriginMode;
   originLabel?: string;
+  excludedStopKeys?: Set<string>;
 }
 
 /**
  * Genera la clave única de una Poképarada consistente con visitedStops
  */
 export function getQuestStopKey(quest: NycQuest): string {
-  return `${quest.name}_${formatCoordsForPgsharp(quest.lat, quest.lng)}`;
+  return `${(quest.name || '').trim()}_${formatCoordsForPgsharp(quest.lat, quest.lng)}`;
+}
+
+/**
+ * Clave normalizada de coordenadas a 5 decimales (~1.1 m) para identificar la misma Poképarada física
+ */
+export function getQuestCoordKey(lat: number, lng: number): string {
+  return `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
+}
+
+/**
+ * Extrae el conjunto de coordenadas normalizadas (5 decimales) desde el historial visitedStops
+ */
+export function extractVisitedCoordSet(visitedStops: Iterable<string>): Set<string> {
+  const coords = new Set<string>();
+  for (const entry of visitedStops) {
+    if (!entry) continue;
+    const lastUnderscore = entry.lastIndexOf('_');
+    const rawCoord = lastUnderscore >= 0 ? entry.slice(lastUnderscore + 1) : entry;
+    const parts = rawCoord.split(',');
+    if (parts.length === 2) {
+      const lat = Number(parts[0]);
+      const lng = Number(parts[1]);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        coords.add(getQuestCoordKey(lat, lng));
+      }
+    }
+  }
+  return coords;
+}
+
+/**
+ * Verifica de forma estricta si una Poképarada ya fue visitada (por clave exacta o por coordenadas físicas)
+ */
+export function isQuestVisited(
+  quest: NycQuest,
+  visitedStops: Set<string>,
+  visitedCoordSet?: Set<string>
+): boolean {
+  if (visitedStops.has(getQuestStopKey(quest))) return true;
+  if (visitedStops.has(`${quest.name}_${formatCoordsForPgsharp(quest.lat, quest.lng)}`)) return true;
+  const coordKey = getQuestCoordKey(quest.lat, quest.lng);
+  if (visitedCoordSet) {
+    return visitedCoordSet.has(coordKey);
+  }
+  return extractVisitedCoordSet(visitedStops).has(coordKey);
 }
 
 function calcChainDistanceKm(chain: NycQuest[]): number {
@@ -395,18 +441,36 @@ function pickDenseClusterSeedIndices(pool: NycQuest[], limit: number): number[] 
  * Genera una ruta óptima encadenando N Poképaradas con menor distancia posible (Nearest-Neighbor + 2-Opt)
  */
 export function generateOptimalNycRoute(params: GenerateNycRouteParams): NycGeneratedRoute {
-  const { candidateQuests, targetCount, originCoords, originQuest, originMode, originLabel } = params;
+  const {
+    candidateQuests,
+    targetCount,
+    originCoords,
+    originQuest,
+    originMode,
+    originLabel,
+    excludedStopKeys,
+  } = params;
 
-  // Deduplicar por clave única preservando orden
+  const excludedCoords = excludedStopKeys
+    ? extractVisitedCoordSet(excludedStopKeys)
+    : new Set<string>();
+
+  // Deduplicar por clave única y coordenada física, excluyendo estrictamente paradas ya visitadas
   const seenKeys = new Set<string>();
+  const seenCoords = new Set<string>();
   const pool: NycQuest[] = [];
   for (const q of candidateQuests) {
     if (typeof q.lat !== 'number' || typeof q.lng !== 'number' || isNaN(q.lat) || isNaN(q.lng)) {
       continue;
     }
+    if (excludedStopKeys && isQuestVisited(q, excludedStopKeys, excludedCoords)) {
+      continue;
+    }
     const key = getQuestStopKey(q);
-    if (!seenKeys.has(key)) {
+    const coordKey = getQuestCoordKey(q.lat, q.lng);
+    if (!seenKeys.has(key) && !seenCoords.has(coordKey)) {
       seenKeys.add(key);
+      seenCoords.add(coordKey);
       pool.push(q);
     }
   }
