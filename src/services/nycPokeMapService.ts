@@ -629,18 +629,24 @@ export interface NycCloudSyncPayload {
   updatedAt: number;
   action?: 'merge' | 'replace';
   resetEpoch?: number;
+  profileId?: string;
 }
 
-const NYC_CLOUD_SYNC_BASE_ENDPOINTS = [
-  '/api/nyc-cloud-sync',
-  'https://ntfy.sh/pokeskills_nyc_sync_v3_salca',
-];
+export function getNycCloudEndpoints(profileId: string = 'Principal'): string[] {
+  const norm = (profileId || 'Principal').toLowerCase().trim();
+  const topic = norm === 'principal' ? 'pokeskills_nyc_sync_v3_salca' : `pokeskills_nyc_sync_v3_salca_${norm}`;
+  return [
+    `https://ntfy.sh/${topic}`,
+    `/api/nyc-cloud-sync?profile=${encodeURIComponent(norm)}`,
+  ];
+}
 
 /**
- * Descarga el estado consolidado de paradas visitadas NYC desde la nube (Celular <-> PC)
+ * Descarga el estado consolidado de paradas visitadas NYC desde la nube (Celular <-> PC) para un perfil específico
  */
-export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | null> {
-  for (const base of NYC_CLOUD_SYNC_BASE_ENDPOINTS) {
+export async function fetchNycCloudSyncState(profileId: string = 'Principal'): Promise<NycCloudSyncPayload | null> {
+  const endpoints = getNycCloudEndpoints(profileId);
+  for (const base of endpoints) {
     try {
       const res = await fetch(`${base}/json?poll=1&since=all`, {
         method: 'GET',
@@ -697,6 +703,7 @@ export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | nu
         lastCopiedQuest: latestCopied,
         updatedAt: latestUpdatedAt,
         resetEpoch: currentResetEpoch,
+        profileId,
       };
     } catch {
       // Probar siguiente endpoint
@@ -711,10 +718,12 @@ export async function fetchNycCloudSyncState(): Promise<NycCloudSyncPayload | nu
  */
 export async function pushNycCloudSyncState(
   localPayload: NycCloudSyncPayload,
-  options?: { forceReplace?: boolean }
+  options?: { forceReplace?: boolean },
+  profileId: string = 'Principal'
 ): Promise<NycCloudSyncPayload | null> {
   const isReplace = !!options?.forceReplace;
   const now = Date.now();
+  const endpoints = getNycCloudEndpoints(profileId);
 
   let stopsToSend: string[] = [];
   let mergedVisited: string[] = [];
@@ -723,7 +732,7 @@ export async function pushNycCloudSyncState(
     stopsToSend = localPayload.visitedStops.filter(Boolean);
     mergedVisited = [...stopsToSend];
   } else {
-    const remote = await fetchNycCloudSyncState();
+    const remote = await fetchNycCloudSyncState(profileId);
     const remoteSet = new Set<string>(remote?.visitedStops || []);
     stopsToSend = localPayload.visitedStops.filter(k => k && !remoteSet.has(k));
     mergedVisited = Array.from(new Set<string>([...remoteSet, ...localPayload.visitedStops]));
@@ -735,6 +744,7 @@ export async function pushNycCloudSyncState(
     updatedAt: now,
     resetEpoch: isReplace ? now : undefined,
     action: isReplace ? 'replace' : 'merge',
+    profileId,
   };
 
   if (!isReplace && stopsToSend.length === 0) {
@@ -752,7 +762,7 @@ export async function pushNycCloudSyncState(
     }
   }
 
-  for (const base of NYC_CLOUD_SYNC_BASE_ENDPOINTS) {
+  for (const base of endpoints) {
     let allOk = true;
     for (let c = 0; c < chunks.length; c++) {
       const isFirstChunk = c === 0;
@@ -763,6 +773,7 @@ export async function pushNycCloudSyncState(
         updatedAt: now,
         action: isReplace && isFirstChunk ? 'replace' : 'merge',
         resetEpoch: isReplace ? now : undefined,
+        profileId,
       });
       try {
         const res = await fetch(base, {

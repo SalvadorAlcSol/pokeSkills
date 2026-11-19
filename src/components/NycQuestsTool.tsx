@@ -31,7 +31,9 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
-  Cloud
+  Cloud,
+  User,
+  CheckCheck
 } from 'lucide-react';
 import {
   NycQuest,
@@ -52,11 +54,89 @@ import {
 } from '../services/nycPokeMapService';
 import { getDistance } from '../utils/pogoMath';
 
+export type NycAccountProfileId = 'Principal' | 'Spectre' | 'Third' | 'Salvador' | 'Ashketchoop';
+
+export interface NycAccountProfile {
+  id: NycAccountProfileId;
+  name: string;
+  badgeColor: string;
+  bgLight: string;
+  textColor: string;
+  borderColor: string;
+  avatarIcon: string;
+  tag: string;
+  description: string;
+}
+
+export const NYC_PROFILES: NycAccountProfile[] = [
+  {
+    id: 'Principal',
+    name: 'Principal',
+    badgeColor: 'bg-red-600',
+    bgLight: 'bg-red-50',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-400',
+    avatarIcon: '👑',
+    tag: 'Principal',
+    description: 'Cuenta principal de juego',
+  },
+  {
+    id: 'Spectre',
+    name: 'Spectre',
+    badgeColor: 'bg-purple-600',
+    bgLight: 'bg-purple-50',
+    textColor: 'text-purple-700',
+    borderColor: 'border-purple-400',
+    avatarIcon: '👻',
+    tag: 'Spectre',
+    description: 'Cuenta secundaria Spectre',
+  },
+  {
+    id: 'Third',
+    name: 'Third',
+    badgeColor: 'bg-blue-600',
+    bgLight: 'bg-blue-50',
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-400',
+    avatarIcon: '⚡',
+    tag: 'Third',
+    description: 'Tercera cuenta Third',
+  },
+  {
+    id: 'Salvador',
+    name: 'Salvador',
+    badgeColor: 'bg-emerald-600',
+    bgLight: 'bg-emerald-50',
+    textColor: 'text-emerald-700',
+    borderColor: 'border-emerald-400',
+    avatarIcon: '🛡️',
+    tag: 'Salvador',
+    description: 'Cuenta personal Salvador',
+  },
+  {
+    id: 'Ashketchoop',
+    name: 'Ashketchoop',
+    badgeColor: 'bg-amber-500',
+    bgLight: 'bg-amber-50',
+    textColor: 'text-amber-800',
+    borderColor: 'border-amber-400',
+    avatarIcon: '🧢',
+    tag: 'Ashketchoop',
+    description: 'Cuenta Ashketchoop',
+  },
+];
+
+export function getProfileStorageKey(baseKey: string, profileId: NycAccountProfileId): string {
+  if (profileId === 'Principal') return baseKey;
+  return `${baseKey}_${profileId}`;
+}
+
 interface NycQuestsToolProps {
   onBackToHub: () => void;
 }
 
 const NYC_STORAGE_KEYS = {
+  ACTIVE_PROFILE: 'nyc_active_profile_v1',
   VISITED_STOPS: 'pgsharp_copied_stops',
   VISITED_VERSION: 'nyc_visited_version_v3',
   RESET_EPOCH: 'nyc_reset_epoch_v3',
@@ -414,36 +494,55 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     readStorage<boolean>(NYC_STORAGE_KEYS.HIDE_VISITED, false)
   );
 
-  // Cargar paradas visitadas combinando la lista inicial con localStorage (migrado limpiamente a v3)
-  const [visitedStops, setVisitedStops] = useState<Set<string>>(() => {
+  // Perfil activo de las 5 cuentas disponibles (Principal, Spectre, Third, Salvador, Ashketchoop)
+  const [activeProfile, setActiveProfile] = useState<NycAccountProfileId>(() => {
+    return readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+  });
+
+  // Función para cargar paradas visitadas de un perfil específico
+  const loadVisitedForProfile = useCallback((profile: NycAccountProfileId): Set<string> => {
     try {
-      const version = localStorage.getItem(NYC_STORAGE_KEYS.VISITED_VERSION);
-      if (version !== 'v3') {
-        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_VERSION, 'v3');
-        localStorage.setItem(
-          NYC_STORAGE_KEYS.VISITED_STOPS,
-          JSON.stringify(INITIAL_VISITED_STOPS)
-        );
-        return new Set(INITIAL_VISITED_STOPS);
+      const key = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, profile);
+      if (profile === 'Principal') {
+        const version = localStorage.getItem(NYC_STORAGE_KEYS.VISITED_VERSION);
+        if (version !== 'v3') {
+          localStorage.setItem(NYC_STORAGE_KEYS.VISITED_VERSION, 'v3');
+          localStorage.setItem(
+            NYC_STORAGE_KEYS.VISITED_STOPS,
+            JSON.stringify(INITIAL_VISITED_STOPS)
+          );
+          return new Set(INITIAL_VISITED_STOPS);
+        }
+        const saved = localStorage.getItem(key);
+        const existing: string[] = saved ? JSON.parse(saved) : [];
+        const combined = new Set<string>([...INITIAL_VISITED_STOPS, ...existing]);
+        return combined;
+      } else {
+        const saved = localStorage.getItem(key);
+        const existing: string[] = saved ? JSON.parse(saved) : [];
+        return new Set<string>(existing);
       }
-      const saved = localStorage.getItem(NYC_STORAGE_KEYS.VISITED_STOPS);
-      const existing: string[] = saved ? JSON.parse(saved) : [];
-      const combined = new Set<string>([...INITIAL_VISITED_STOPS, ...existing]);
-      localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(Array.from(combined)));
-      return combined;
     } catch {
-      return new Set(INITIAL_VISITED_STOPS);
+      return profile === 'Principal' ? new Set(INITIAL_VISITED_STOPS) : new Set();
     }
+  }, []);
+
+  // Cargar paradas visitadas según el perfil activo
+  const [visitedStops, setVisitedStops] = useState<Set<string>>(() => {
+    const prof = readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+    return loadVisitedForProfile(prof);
   });
 
   // Gestor modal de paradas visitadas
   const [isVisitedManagerOpen, setIsVisitedManagerOpen] = useState<boolean>(false);
   const [visitedSearchTerm, setVisitedSearchTerm] = useState<string>('');
 
-  // Última parada copiada persistida (antirreinicio)
-  const [lastCopiedQuest, setLastCopiedQuest] = useState<NycQuest | null>(() =>
-    readStorage<NycQuest | null>(NYC_STORAGE_KEYS.LAST_COPIED, null)
-  );
+  // Última parada copiada persistida por perfil (antirreinicio)
+  const [lastCopiedQuest, setLastCopiedQuest] = useState<NycQuest | null>(() => {
+    const prof = readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+    const key = getProfileStorageKey(NYC_STORAGE_KEYS.LAST_COPIED, prof);
+    return readStorage<NycQuest | null>(key, null);
+  });
 
   // Filtros interactivos persistidos
   const [searchTerm, setSearchTerm] = useState<string>(() =>
@@ -472,12 +571,17 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   const [isPickingOriginOnMap, setIsPickingOriginOnMap] = useState<boolean>(false);
   const [routeError, setRouteError] = useState<string | null>(null);
 
-  const [activeRoute, setActiveRoute] = useState<NycGeneratedRoute | null>(() =>
-    readStorage<NycGeneratedRoute | null>(NYC_STORAGE_KEYS.ACTIVE_ROUTE, null)
-  );
+  const [activeRoute, setActiveRoute] = useState<NycGeneratedRoute | null>(() => {
+    const prof = readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+    const key = getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, prof);
+    return readStorage<NycGeneratedRoute | null>(key, null);
+  });
   const [routeCurrentIdx, setRouteCurrentIdx] = useState<number>(() => {
-    const savedRoute = readStorage<NycGeneratedRoute | null>(NYC_STORAGE_KEYS.ACTIVE_ROUTE, null);
-    const savedIdx = readStorage<number>(NYC_STORAGE_KEYS.ROUTE_IDX, 0);
+    const prof = readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+    const routeKey = getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, prof);
+    const idxKey = getProfileStorageKey(NYC_STORAGE_KEYS.ROUTE_IDX, prof);
+    const savedRoute = readStorage<NycGeneratedRoute | null>(routeKey, null);
+    const savedIdx = readStorage<number>(idxKey, 0);
     if (!savedRoute || !savedRoute.stops.length) return 0;
     return Math.min(Math.max(0, savedIdx), savedRoute.stops.length - 1);
   });
@@ -485,10 +589,50 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     readStorage<boolean>(NYC_STORAGE_KEYS.ONLY_ROUTE_STOPS, false)
   );
 
+  // Resumen de actividad por perfil (número de paradas visitadas, si tiene ruta activa, etc.)
+  const [profileSummaries, setProfileSummaries] = useState<Record<NycAccountProfileId, { count: number; hasRoute: boolean; lastCopiedName?: string }>>(() => {
+    const map: any = {};
+    for (const p of NYC_PROFILES) {
+      try {
+        const key = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, p.id);
+        const saved = localStorage.getItem(key);
+        let count = 0;
+        if (saved) {
+          count = JSON.parse(saved).length;
+        } else if (p.id === 'Principal') {
+          count = INITIAL_VISITED_STOPS.length;
+        }
+        const routeKey = getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, p.id);
+        const savedRoute = localStorage.getItem(routeKey);
+        const hasRoute = Boolean(savedRoute && JSON.parse(savedRoute)?.stops?.length > 0);
+        map[p.id] = { count, hasRoute };
+      } catch {
+        map[p.id] = { count: p.id === 'Principal' ? INITIAL_VISITED_STOPS.length : 0, hasRoute: false };
+      }
+    }
+    return map;
+  });
+
+  // Mantener actualizado el conteo en tiempo real para el perfil activo
+  useEffect(() => {
+    setProfileSummaries(prev => ({
+      ...prev,
+      [activeProfile]: {
+        count: visitedStops.size,
+        hasRoute: Boolean(activeRoute && activeRoute.stops.length > 0),
+        lastCopiedName: lastCopiedQuest?.name,
+      },
+    }));
+  }, [activeProfile, visitedStops.size, activeRoute, lastCopiedQuest]);
+
   // Modo Mini Barra Horizontal (HUD Compacto)
   const [isMiniHudMode, setIsMiniHudMode] = useState<boolean>(() => {
     const wantHud = readStorage<boolean>(NYC_STORAGE_KEYS.MINI_HUD, false);
-    const savedRoute = readStorage<NycGeneratedRoute | null>(NYC_STORAGE_KEYS.ACTIVE_ROUTE, null);
+    const prof = readStorage<NycAccountProfileId>(NYC_STORAGE_KEYS.ACTIVE_PROFILE, 'Principal');
+    const savedRoute = readStorage<NycGeneratedRoute | null>(
+      getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, prof),
+      null
+    );
     return Boolean(wantHud && savedRoute && savedRoute.stops.length > 0);
   });
   const [pauseMapInHud, setPauseMapInHud] = useState<boolean>(true);
@@ -538,16 +682,20 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   }, [viewMode]);
 
   useEffect(() => {
-    writeStorage(NYC_STORAGE_KEYS.LAST_COPIED, lastCopiedQuest);
-  }, [lastCopiedQuest]);
+    writeStorage(NYC_STORAGE_KEYS.ACTIVE_PROFILE, activeProfile);
+  }, [activeProfile]);
 
   useEffect(() => {
-    writeStorage(NYC_STORAGE_KEYS.ACTIVE_ROUTE, activeRoute);
-  }, [activeRoute]);
+    writeStorage(getProfileStorageKey(NYC_STORAGE_KEYS.LAST_COPIED, activeProfile), lastCopiedQuest);
+  }, [lastCopiedQuest, activeProfile]);
 
   useEffect(() => {
-    writeStorage(NYC_STORAGE_KEYS.ROUTE_IDX, routeCurrentIdx);
-  }, [routeCurrentIdx]);
+    writeStorage(getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, activeProfile), activeRoute);
+  }, [activeRoute, activeProfile]);
+
+  useEffect(() => {
+    writeStorage(getProfileStorageKey(NYC_STORAGE_KEYS.ROUTE_IDX, activeProfile), routeCurrentIdx);
+  }, [routeCurrentIdx, activeProfile]);
 
   useEffect(() => {
     writeStorage(NYC_STORAGE_KEYS.MINI_HUD, isMiniHudMode);
@@ -561,27 +709,99 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     writeStorage(NYC_STORAGE_KEYS.ROUTE_COUNT, routeTargetCount);
   }, [routeTargetCount]);
 
-  // Sincronización automática bidireccional en la nube (Celular <-> PC)
+  // Cambiar de perfil de cuenta de forma reactiva y persistida
+  const handleSwitchProfile = useCallback(
+    (newProfileId: NycAccountProfileId) => {
+      if (newProfileId === activeProfile) return;
+
+      // 1. Guardar el estado actual del perfil saliente
+      try {
+        const curVisitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
+        localStorage.setItem(curVisitedKey, JSON.stringify(Array.from(visitedStops)));
+
+        const curLastCopiedKey = getProfileStorageKey(NYC_STORAGE_KEYS.LAST_COPIED, activeProfile);
+        if (lastCopiedQuest) {
+          localStorage.setItem(curLastCopiedKey, JSON.stringify(lastCopiedQuest));
+        } else {
+          localStorage.removeItem(curLastCopiedKey);
+        }
+
+        const curRouteKey = getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, activeProfile);
+        if (activeRoute) {
+          localStorage.setItem(curRouteKey, JSON.stringify(activeRoute));
+        } else {
+          localStorage.removeItem(curRouteKey);
+        }
+
+        const curRouteIdxKey = getProfileStorageKey(NYC_STORAGE_KEYS.ROUTE_IDX, activeProfile);
+        localStorage.setItem(curRouteIdxKey, JSON.stringify(routeCurrentIdx));
+      } catch (e) {
+        console.error('Error guardando perfil saliente:', e);
+      }
+
+      // 2. Cargar estado del nuevo perfil
+      const nextVisited = loadVisitedForProfile(newProfileId);
+      setVisitedStops(nextVisited);
+
+      const nextLastCopiedKey = getProfileStorageKey(NYC_STORAGE_KEYS.LAST_COPIED, newProfileId);
+      const nextLastCopied = readStorage<NycQuest | null>(nextLastCopiedKey, null);
+      setLastCopiedQuest(nextLastCopied);
+
+      const nextRouteKey = getProfileStorageKey(NYC_STORAGE_KEYS.ACTIVE_ROUTE, newProfileId);
+      const nextRoute = readStorage<NycGeneratedRoute | null>(nextRouteKey, null);
+      setActiveRoute(nextRoute);
+
+      const nextRouteIdxKey = getProfileStorageKey(NYC_STORAGE_KEYS.ROUTE_IDX, newProfileId);
+      const nextRouteIdx = readStorage<number>(nextRouteIdxKey, 0);
+      setRouteCurrentIdx(nextRouteIdx);
+
+      // 3. Persistir nuevo perfil activo
+      setActiveProfile(newProfileId);
+      writeStorage(NYC_STORAGE_KEYS.ACTIVE_PROFILE, newProfileId);
+
+      // 4. Mostrar feedback descriptivo al usuario
+      const profObj = NYC_PROFILES.find(p => p.id === newProfileId);
+      const count = nextVisited.size;
+      const msg =
+        count > 0
+          ? `${profObj?.avatarIcon || '👤'} Cuenta: ${newProfileId} (${count} paradas ya visitadas hoy)`
+          : `${profObj?.avatarIcon || '👤'} Cuenta: ${newProfileId} (⚪ Sin actividad hoy)`;
+      setCopiedCoords(msg);
+      setTimeout(() => setCopiedCoords(null), 3000);
+
+      // 5. Pull desde la nube para el nuevo perfil
+      hasPulledCloudRef.current = false;
+      setTimeout(() => {
+        handleSyncWithCloud(false, newProfileId);
+      }, 50);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeProfile, visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx, loadVisitedForProfile]
+  );
+
+  // Sincronización automática bidireccional en la nube (Celular <-> PC) por perfil
   const handleSyncWithCloud = useCallback(
-    async (showToastOnSuccess = false) => {
+    async (showToastOnSuccess = false, targetProfile: NycAccountProfileId = activeProfile) => {
       if (isPullingCloudRef.current) return;
       isPullingCloudRef.current = true;
       setIsCloudSyncing(true);
       try {
-        const remote = await fetchNycCloudSyncState();
+        const remote = await fetchNycCloudSyncState(targetProfile);
         let mergedList: string[] = Array.from(visitedStops);
         let addedFromCloud = 0;
 
         if (remote && Array.isArray(remote.visitedStops)) {
           const remoteResetEpoch = remote.resetEpoch || 0;
-          const localResetEpoch = Number(localStorage.getItem(NYC_STORAGE_KEYS.RESET_EPOCH) || '0');
+          const resetEpochKey = getProfileStorageKey(NYC_STORAGE_KEYS.RESET_EPOCH, targetProfile);
+          const localResetEpoch = Number(localStorage.getItem(resetEpochKey) || '0');
+          const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, targetProfile);
 
           if (remoteResetEpoch > localResetEpoch) {
             const freshSet = new Set<string>(remote.visitedStops);
             mergedList = Array.from(freshSet);
             setVisitedStops(freshSet);
-            localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(remoteResetEpoch));
-            localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
+            localStorage.setItem(resetEpochKey, String(remoteResetEpoch));
+            localStorage.setItem(visitedKey, JSON.stringify(mergedList));
           } else {
             const unionSet = new Set<string>(visitedStops);
             for (const k of remote.visitedStops) {
@@ -594,7 +814,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
             if (addedFromCloud > 0) {
               setVisitedStops(unionSet);
               try {
-                localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(mergedList));
+                localStorage.setItem(visitedKey, JSON.stringify(mergedList));
               } catch (e) {
                 console.error(e);
               }
@@ -611,21 +831,27 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         // Si el dispositivo local tiene paradas que la nube aún no tenía o se pidió sync manual, subir la unión
         const remoteCount = remote?.visitedStops?.length ?? 0;
         if (mergedList.length > remoteCount || showToastOnSuccess) {
-          await pushNycCloudSyncState({
-            visitedStops: mergedList,
-            lastCopiedQuest,
-            activeRoute,
-            routeCurrentIdx,
-            updatedAt: Date.now(),
-          });
+          await pushNycCloudSyncState(
+            {
+              visitedStops: mergedList,
+              lastCopiedQuest,
+              activeRoute,
+              routeCurrentIdx,
+              updatedAt: Date.now(),
+              profileId: targetProfile,
+            },
+            undefined,
+            targetProfile
+          );
         }
 
         setLastCloudSyncAt(new Date());
         if (showToastOnSuccess) {
+          const profObj = NYC_PROFILES.find(p => p.id === targetProfile);
           setCopiedCoords(
             addedFromCloud > 0
-              ? `☁️ +${addedFromCloud} paradas sincronizadas desde tu otro dispositivo (${mergedList.length} total)`
-              : `☁️ Nube al día (${mergedList.length} paradas sincronizadas Celular ↔ PC)`
+              ? `☁️ +${addedFromCloud} paradas sincronizadas para ${profObj?.avatarIcon} ${targetProfile} (${mergedList.length} total)`
+              : `☁️ Nube al día para ${profObj?.avatarIcon} ${targetProfile} (${mergedList.length} paradas)`
           );
           setTimeout(() => setCopiedCoords(null), 3200);
         }
@@ -636,41 +862,54 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         setIsCloudSyncing(false);
       }
     },
-    [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx]
+    [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx, activeProfile]
   );
 
-  // Restablecer historial exactamente a las 78 paradas confirmadas hoy
+  // Restablecer historial del perfil activo (para Principal a 78 de hoy, para otras cuentas a 0)
   const handleResetToInitialVisited = useCallback(async () => {
     const now = Date.now();
-    const freshSet = new Set(INITIAL_VISITED_STOPS);
+    const defaultList = activeProfile === 'Principal' ? INITIAL_VISITED_STOPS : [];
+    const freshSet = new Set(defaultList);
     setVisitedStops(freshSet);
+    const resetEpochKey = getProfileStorageKey(NYC_STORAGE_KEYS.RESET_EPOCH, activeProfile);
+    const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
     try {
-      localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
-      localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(INITIAL_VISITED_STOPS));
+      localStorage.setItem(resetEpochKey, String(now));
+      localStorage.setItem(visitedKey, JSON.stringify(defaultList));
     } catch (e) {
       console.error(e);
     }
     await pushNycCloudSyncState(
       {
-        visitedStops: INITIAL_VISITED_STOPS,
+        visitedStops: defaultList,
         lastCopiedQuest,
         activeRoute,
         updatedAt: now,
+        profileId: activeProfile,
       },
-      { forceReplace: true }
+      { forceReplace: true },
+      activeProfile
     );
-    setCopiedCoords(`✓ Historial restablecido a las ${INITIAL_VISITED_STOPS.length} paradas de hoy`);
+    const profObj = NYC_PROFILES.find(p => p.id === activeProfile);
+    setCopiedCoords(
+      activeProfile === 'Principal'
+        ? `✓ Historial de ${profObj?.avatarIcon} ${activeProfile} restablecido a las ${defaultList.length} paradas de hoy`
+        : `✓ Historial de ${profObj?.avatarIcon} ${activeProfile} restablecido a 0 paradas`
+    );
     setTimeout(() => setCopiedCoords(null), 3200);
-  }, [lastCopiedQuest, activeRoute]);
+  }, [lastCopiedQuest, activeRoute, activeProfile]);
 
-  // Vaciar completamente el historial a 0 paradas visitadas
+  // Vaciar completamente el historial a 0 paradas visitadas en el perfil activo
   const handleClearAllVisited = useCallback(async () => {
-    if (!window.confirm('¿Seguro que deseas vaciar todas las paradas visitadas (dejar en 0)?')) return;
+    const profObj = NYC_PROFILES.find(p => p.id === activeProfile);
+    if (!window.confirm(`¿Seguro que deseas vaciar las paradas visitadas de la cuenta ${profObj?.name} (dejar en 0)?`)) return;
     const now = Date.now();
     setVisitedStops(new Set());
+    const resetEpochKey = getProfileStorageKey(NYC_STORAGE_KEYS.RESET_EPOCH, activeProfile);
+    const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
     try {
-      localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
-      localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify([]));
+      localStorage.setItem(resetEpochKey, String(now));
+      localStorage.setItem(visitedKey, JSON.stringify([]));
     } catch (e) {
       console.error(e);
     }
@@ -680,23 +919,27 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         lastCopiedQuest: null,
         activeRoute: null,
         updatedAt: now,
+        profileId: activeProfile,
       },
-      { forceReplace: true }
+      { forceReplace: true },
+      activeProfile
     );
-    setCopiedCoords('✓ Historial de visitadas vaciado (0)');
+    setCopiedCoords(`✓ Historial de ${profObj?.name} vaciado (0)`);
     setTimeout(() => setCopiedCoords(null), 3200);
-  }, []);
+  }, [activeProfile]);
 
-  // Eliminar una parada específica de la lista de visitadas
+  // Eliminar una parada específica de la lista de visitadas del perfil activo
   const handleRemoveSingleVisited = useCallback(async (stopKey: string) => {
     const now = Date.now();
     setVisitedStops(prev => {
       const next = new Set<string>(prev as Set<string>);
       next.delete(stopKey);
       const arr: string[] = Array.from(next);
+      const resetEpochKey = getProfileStorageKey(NYC_STORAGE_KEYS.RESET_EPOCH, activeProfile);
+      const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
       try {
-        localStorage.setItem(NYC_STORAGE_KEYS.RESET_EPOCH, String(now));
-        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(arr));
+        localStorage.setItem(resetEpochKey, String(now));
+        localStorage.setItem(visitedKey, JSON.stringify(arr));
       } catch (e) {
         console.error(e);
       }
@@ -706,12 +949,14 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           lastCopiedQuest,
           activeRoute,
           updatedAt: now,
+          profileId: activeProfile,
         },
-        { forceReplace: true }
+        { forceReplace: true },
+        activeProfile
       );
       return next;
     });
-  }, [lastCopiedQuest, activeRoute]);
+  }, [lastCopiedQuest, activeRoute, activeProfile]);
 
   // Pull inicial al abrir en PC o Celular y cada vez que la pestaña vuelve a foco
   useEffect(() => {
@@ -735,20 +980,25 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   useEffect(() => {
     if (!hasPulledCloudRef.current) return;
     const timer = setTimeout(() => {
-      pushNycCloudSyncState({
-        visitedStops: Array.from(visitedStops),
-        lastCopiedQuest,
-        activeRoute,
-        routeCurrentIdx,
-        updatedAt: Date.now(),
-      })
+      pushNycCloudSyncState(
+        {
+          visitedStops: Array.from(visitedStops),
+          lastCopiedQuest,
+          activeRoute,
+          routeCurrentIdx,
+          updatedAt: Date.now(),
+          profileId: activeProfile,
+        },
+        undefined,
+        activeProfile
+      )
         .then(res => {
           if (res) setLastCloudSyncAt(new Date());
         })
         .catch(() => {});
     }, 600);
     return () => clearTimeout(timer);
-  }, [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx]);
+  }, [visitedStops, lastCopiedQuest, activeRoute, routeCurrentIdx, activeProfile]);
 
   // Conjunto de coordenadas normalizadas a 5 decimales (~1.1 m) de todas las paradas visitadas
   const visitedCoordSet = useMemo(() => extractVisitedCoordSet(visitedStops), [visitedStops]);
@@ -758,20 +1008,21 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     [visitedStops, visitedCoordSet]
   );
 
-  // Registro de paradas ya copiadas / teletransportadas (individual o por lote)
+  // Registro de paradas ya copiadas / teletransportadas (individual o por lote) por perfil
   const markAsVisited = useCallback((key: string) => {
     setVisitedStops(prev => {
       if (prev.has(key)) return prev;
       const updated = new Set(prev);
       updated.add(key);
       try {
-        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(Array.from(updated)));
+        const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
+        localStorage.setItem(visitedKey, JSON.stringify(Array.from(updated)));
       } catch (e) {
         console.error(e);
       }
       return updated;
     });
-  }, []);
+  }, [activeProfile]);
 
   const markQuestsAsVisited = useCallback((questsToMark: NycQuest[]) => {
     if (!questsToMark.length) return;
@@ -787,13 +1038,14 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       }
       if (!changed) return prev;
       try {
-        localStorage.setItem(NYC_STORAGE_KEYS.VISITED_STOPS, JSON.stringify(Array.from(updated)));
+        const visitedKey = getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile);
+        localStorage.setItem(visitedKey, JSON.stringify(Array.from(updated)));
       } catch (e) {
         console.error(e);
       }
       return updated;
     });
-  }, []);
+  }, [activeProfile]);
 
   // Copia de coordenadas exacta: lat,long sin espacios
   const handleCopyCoords = useCallback(
@@ -1084,7 +1336,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
         setVisitedStops(effectiveVisited);
         try {
           localStorage.setItem(
-            NYC_STORAGE_KEYS.VISITED_STOPS,
+            getProfileStorageKey(NYC_STORAGE_KEYS.VISITED_STOPS, activeProfile),
             JSON.stringify(Array.from(effectiveVisited))
           );
         } catch (e) {
@@ -1849,6 +2101,49 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           </div>
         </div>
 
+        {/* SELECTOR RÁPIDO DE CUENTA EN HUD */}
+        <div className="bg-slate-950 border-b border-slate-800/80 px-2.5 py-1 flex items-center justify-between gap-1 overflow-x-auto text-[11px] shrink-0">
+          <div className="flex items-center gap-1 shrink-0 text-slate-400 text-[10px] font-bold">
+            <User className="w-3 h-3 text-amber-400" />
+            <span className="hidden xs:inline">Cuenta:</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto">
+            {NYC_PROFILES.map(p => {
+              const isCurrent = p.id === activeProfile;
+              const stats = profileSummaries[p.id] || { count: 0, hasRoute: false };
+              const hasActivity = stats.count > 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleSwitchProfile(p.id)}
+                  className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer border ${
+                    isCurrent
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-xs'
+                      : 'bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700'
+                  }`}
+                  title={`${p.name}: ${stats.count} paradas visitadas hoy`}
+                >
+                  <span>{p.avatarIcon}</span>
+                  <span>{p.name}</span>
+                  <span
+                    className={`text-[9px] px-1 rounded-full font-mono ${
+                      hasActivity
+                        ? isCurrent
+                          ? 'bg-slate-900 text-amber-300'
+                          : 'bg-emerald-600 text-white'
+                        : isCurrent
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    {stats.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* BARRA SECUNDARIA COMPACTA */}
         <div className="bg-slate-900/70 border-b border-slate-800 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 text-[11px] shrink-0">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -2097,6 +2392,64 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           </div>
         </div>
       </header>
+
+      {/* Barra de Perfiles de Cuentas (5 Cuentas: Principal, Spectre, Third, Salvador, Ashketchoop) */}
+      <div className="bg-[#8E1B0F] border-b-2 border-red-950/40 text-white px-4 sm:px-8 py-2.5 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="bg-[#FFE550] text-[#0B1B3C] font-black text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+              <User className="w-3.5 h-3.5" />
+              <span>Cuentas</span>
+            </span>
+            <span className="font-bold text-red-100 text-xs hidden sm:inline">
+              Selecciona tu cuenta activa (las paradas y rutas se guardan por separado):
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0">
+            {NYC_PROFILES.map(p => {
+              const isCurrent = p.id === activeProfile;
+              const stats = profileSummaries[p.id] || { count: 0, hasRoute: false };
+              const hasActivity = stats.count > 0;
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleSwitchProfile(p.id)}
+                  className={`px-3 py-1.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer border-2 shrink-0 ${
+                    isCurrent
+                      ? 'bg-white text-slate-950 border-amber-300 shadow-md ring-2 ring-amber-300/80 scale-102'
+                      : 'bg-red-950/60 hover:bg-red-950/90 text-red-100 border-red-800/80 hover:border-red-600'
+                  }`}
+                  title={`${p.name} - ${p.description} • ${stats.count} paradas registradas hoy`}
+                >
+                  <span className="text-base">{p.avatarIcon}</span>
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5 leading-tight">
+                      <span className="font-black text-xs">{p.name}</span>
+                      {isCurrent && (
+                        <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter shadow-xs">
+                          EN USO
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] leading-tight font-semibold flex items-center gap-1 mt-0.5">
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full ${
+                          hasActivity ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
+                        }`}
+                      />
+                      <span className={isCurrent ? 'text-slate-700 font-bold' : 'text-red-200'}>
+                        {hasActivity ? `${stats.count} paradas hoy` : '0 (Sin actividad)'}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Toast Alert Flotante para Confirmación de Copia */}
       {copiedCoords && (
@@ -3005,11 +3358,14 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
                   <Check className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
-                    Poképaradas Visitadas ({visitedStops.size})
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <span>Poképaradas Visitadas ({visitedStops.size})</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      Cuenta: {activeProfile}
+                    </span>
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Historial sincronizado automáticamente entre Celular y PC
+                    Historial individual sincronizado automáticamente entre Celular y PC
                   </p>
                 </div>
               </div>
@@ -3021,24 +3377,74 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               </button>
             </div>
 
+            {/* Pestañas de Cambio Rápido de Cuenta dentro del Modal */}
+            <div className="bg-slate-100/80 px-4 py-2 border-b border-slate-200 flex items-center justify-between gap-2 overflow-x-auto">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <User className="w-3.5 h-3.5" /> Cuenta:
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                {NYC_PROFILES.map(p => {
+                  const isCur = p.id === activeProfile;
+                  const st = profileSummaries[p.id] || { count: 0, hasRoute: false };
+                  const hasAct = st.count > 0;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSwitchProfile(p.id)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer border ${
+                        isCur
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs ring-1 ring-amber-400'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
+                      }`}
+                      title={`${p.name}: ${st.count} paradas`}
+                    >
+                      <span>{p.avatarIcon}</span>
+                      <span>{p.name}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                          hasAct
+                            ? isCur
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-emerald-100 text-emerald-800'
+                            : isCur
+                            ? 'bg-slate-700 text-slate-300'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {st.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Acciones Rápidas */}
             <div className="p-4 border-b border-slate-100 bg-slate-50/70 flex flex-wrap items-center gap-2 justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleResetToInitialVisited}
                   className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  title="Restaura la lista limpia oficial de 78 paradas de hoy"
+                  title={
+                    activeProfile === 'Principal'
+                      ? 'Restaura la lista limpia oficial de 78 paradas de hoy'
+                      : `Restablecer paradas de ${activeProfile} a 0`
+                  }
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Restablecer a las 78 de hoy</span>
+                  <span>
+                    {activeProfile === 'Principal'
+                      ? 'Restablecer a las 78 de hoy'
+                      : `Restablecer ${activeProfile} (0)`}
+                  </span>
                 </button>
                 <button
                   onClick={handleClearAllVisited}
                   className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                  title="Vaciar todo el historial (dejar en 0 visitadas)"
+                  title={`Vaciar todo el historial de ${activeProfile} (dejar en 0 visitadas)`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Vaciar (0)</span>
+                  <span>Vaciar ({activeProfile})</span>
                 </button>
               </div>
 
@@ -3048,7 +3454,7 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
                 className="px-3 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Cloud className={`w-3.5 h-3.5 ${isCloudSyncing ? 'animate-pulse' : ''}`} />
-                <span>{isCloudSyncing ? 'Sincronizando...' : 'Sync Nube'}</span>
+                <span>{isCloudSyncing ? 'Sincronizando...' : `Sync Nube (${activeProfile})`}</span>
               </button>
             </div>
 
