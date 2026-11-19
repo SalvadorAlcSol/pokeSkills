@@ -1,4 +1,5 @@
 import { POGO_DATABASE } from '../data/pogoDatabase';
+import { getDistance, getCooldownMinutes } from '../utils/pogoMath';
 
 export interface NycQuest {
   name: string; // Nombre de la Poképarada
@@ -187,4 +188,371 @@ export const POPULAR_PRESET_FILTERS = [
  */
 export function formatCoordsForPgsharp(lat: number, lng: number): string {
   return `${lat},${lng}`;
+}
+
+export interface NycRouteStop {
+  quest: NycQuest;
+  stepNumber: number;
+  distanceFromPrevKm: number;
+  cooldownMinutes: number;
+  stopKey: string;
+}
+
+export type NycRouteOriginMode = 'auto_cluster' | 'last_stop' | 'map_point' | 'custom_coords';
+
+export interface NycGeneratedRoute {
+  stops: NycRouteStop[];
+  totalDistanceKm: number;
+  avgDistanceMeters: number;
+  totalCooldownMinutes: number;
+  originLabel: string;
+  createdAt: number;
+}
+
+export interface GenerateNycRouteParams {
+  candidateQuests: NycQuest[];
+  targetCount: number;
+  originCoords?: { lat: number; lng: number } | null;
+  originQuest?: NycQuest | null;
+  originMode: NycRouteOriginMode;
+  originLabel?: string;
+}
+
+/**
+ * Genera la clave única de una Poképarada consistente con visitedStops
+ */
+export function getQuestStopKey(quest: NycQuest): string {
+  return `${quest.name}_${formatCoordsForPgsharp(quest.lat, quest.lng)}`;
+}
+
+function calcChainDistanceKm(chain: NycQuest[]): number {
+  let total = 0;
+  for (let i = 1; i < chain.length; i++) {
+    total += getDistance(chain[i - 1].lat, chain[i - 1].lng, chain[i].lat, chain[i].lng);
+  }
+  return total;
+}
+
+/**
+ * Construye una cadena voraz (Nearest-Neighbor) de hasta `limit` paradas partiendo de `startIdx`
+ */
+function buildGreedyChain(
+  pool: NycQuest[],
+  startIdx: number,
+  limit: number
+): { chain: NycQuest[]; totalDistanceKm: number } {
+  const n = pool.length;
+  const used = new Uint8Array(n);
+  const chain: NycQuest[] = [pool[startIdx]];
+  used[startIdx] = 1;
+
+  let current = pool[startIdx];
+  let totalDist = 0;
+
+  while (chain.length < limit) {
+    let nearestIdx = -1;
+    let minDist = Infinity;
+
+    for (let i = 0; i < n; i++) {
+      if (used[i]) continue;
+      const dist = getDistance(current.lat, current.lng, pool[i].lat, pool[i].lng);
+      if (dist < minDist) {
+        minDist = dist;
+        nearestIdx = i;
+      }
+    }
+
+    if (nearestIdx === -1) break;
+    used[nearestIdx] = 1;
+    current = pool[nearestIdx];
+    chain.push(current);
+    totalDist += minDist;
+  }
+
+  return { chain, totalDistanceKm: totalDist };
+}
+
+/**
+ * Optimiza una ruta abierta con 2-Opt manteniendo fija la primera parada (path[0])
+ */
+function optimizeChain2Opt(initialChain: NycQuest[]): NycQuest[] {
+  const n = initialChain.length;
+  if (n <= 2) return [...initialChain];
+
+  const path = [...initialChain];
+  let improved = true;
+  let iterations = 0;
+  const maxIterations = 100;
+
+  while (improved && iterations < maxIterations) {
+    improved = false;
+    iterations++;
+
+    for (let i = 1; i < n - 1; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const a = path[i - 1];
+        const b = path[i];
+        const c = path[j];
+
+        const oldPrev = getDistance(a.lat, a.lng, b.lat, b.lng);
+        const newPrev = getDistance(a.lat, a.lng, c.lat, c.lng);
+
+        let delta = newPrev - oldPrev;
+        if (j < n - 1) {
+          const d = path[j + 1];
+          const oldNext = getDistance(c.lat, c.lng, d.lat, d.lng);
+          const newNext = getDistance(b.lat, b.lng, d.lat, d.lng);
+          delta += newNext - oldNext;
+        }
+
+        if (delta < -1e-6) {
+          let left = i;
+          let right = j;
+          while (left < right) {
+            const tmp = path[left];
+            path[left] = path[right];
+            path[right] = tmp;
+            left++;
+            right--;
+          }
+          improved = true;
+        }
+      }
+    }
+  }
+
+  return path;
+}
+
+/**
+ * Selecciona semillas prometedoras por densidad local de vecinos cercanos para el modo auto_cluster
+ */
+function pickDenseClusterSeedIndices(pool: NycQuest[], limit: number): number[] {
+  const n = pool.length;
+  if (n <= 20) {
+    return pool.map((_, idx) => idx);
+  }
+
+  const cosLat = Math.cos((40.75 * Math.PI) / 180);
+  const k = Math.min(n - 1, Math.max(5, Math.min(15, Math.floor(limit / 2))));
+  const scores: { idx: number; score: number }[] = [];
+
+  // Para listas muy grandes, evaluamos una muestra espaciada o todas si n <= 1200
+  const step = n > 1200 ? Math.ceil(n / 800) : 1;
+
+  for (let i = 0; i < n; i += step) {
+    const latI = pool[i].lat;
+    const lngI = pool[i].lng;
+    const smallest: number[] = [];
+
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const dLat = pool[j].lat - latI;
+      const dLng = (pool[j].lng - lngI) * cosLat;
+      const d2 = dLat * dLat + dLng * dLng;
+
+      if (smallest.length < k) {
+        smallest.push(d2);
+        if (smallest.length === k) {
+          smallest.sort((a, b) => a - b);
+        }
+      } else if (d2 < smallest[k - 1]) {
+        smallest[k - 1] = d2;
+        for (let m = k - 1; m > 0 && smallest[m] < smallest[m - 1]; m--) {
+          const tmp = smallest[m];
+          smallest[m] = smallest[m - 1];
+          smallest[m - 1] = tmp;
+        }
+      }
+    }
+
+    let sum = 0;
+    for (let m = 0; m < smallest.length; m++) {
+      sum += smallest[m];
+    }
+    scores.push({ idx: i, score: sum });
+  }
+
+  scores.sort((a, b) => a.score - b.score);
+
+  const maxSeeds = limit > 150 ? 10 : 20;
+  const selected = new Set<number>();
+  for (let i = 0; i < scores.length && selected.size < maxSeeds; i++) {
+    selected.add(scores[i].idx);
+  }
+
+  // Añadir algunas semillas distribuidas por índice para evitar óptimos locales
+  const spreadCount = 5;
+  for (let s = 0; s < spreadCount; s++) {
+    const idx = Math.min(n - 1, Math.floor((s * n) / spreadCount));
+    selected.add(idx);
+  }
+
+  return Array.from(selected);
+}
+
+/**
+ * Genera una ruta óptima encadenando N Poképaradas con menor distancia posible (Nearest-Neighbor + 2-Opt)
+ */
+export function generateOptimalNycRoute(params: GenerateNycRouteParams): NycGeneratedRoute {
+  const { candidateQuests, targetCount, originCoords, originQuest, originMode, originLabel } = params;
+
+  // Deduplicar por clave única preservando orden
+  const seenKeys = new Set<string>();
+  const pool: NycQuest[] = [];
+  for (const q of candidateQuests) {
+    if (typeof q.lat !== 'number' || typeof q.lng !== 'number' || isNaN(q.lat) || isNaN(q.lng)) {
+      continue;
+    }
+    const key = getQuestStopKey(q);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      pool.push(q);
+    }
+  }
+
+  if (pool.length === 0 || targetCount <= 0) {
+    return {
+      stops: [],
+      totalDistanceKm: 0,
+      avgDistanceMeters: 0,
+      totalCooldownMinutes: 0,
+      originLabel: originLabel || 'Sin paradas disponibles',
+      createdAt: Date.now(),
+    };
+  }
+
+  const limit = Math.min(Math.max(1, Math.floor(targetCount)), pool.length);
+  let bestChain: NycQuest[] = [];
+  let resolvedOriginLabel = originLabel || '';
+
+  if (originMode === 'last_stop' && originQuest) {
+    const targetKey = getQuestStopKey(originQuest);
+    let startIdx = pool.findIndex(q => getQuestStopKey(q) === targetKey);
+    if (startIdx === -1) {
+      // Si la parada origen ya está oculta/visitada, iniciar en la parada disponible más cercana a ella
+      let minDist = Infinity;
+      for (let i = 0; i < pool.length; i++) {
+        const d = getDistance(originQuest.lat, originQuest.lng, pool[i].lat, pool[i].lng);
+        if (d < minDist) {
+          minDist = d;
+          startIdx = i;
+        }
+      }
+    }
+    bestChain = buildGreedyChain(pool, Math.max(0, startIdx), limit).chain;
+    if (!resolvedOriginLabel) {
+      resolvedOriginLabel = `Desde ${originQuest.name || 'parada seleccionada'}`;
+    }
+  } else if ((originMode === 'map_point' || originMode === 'custom_coords') && originCoords) {
+    let startIdx = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+      const d = getDistance(originCoords.lat, originCoords.lng, pool[i].lat, pool[i].lng);
+      if (d < minDist) {
+        minDist = d;
+        startIdx = i;
+      }
+    }
+    bestChain = buildGreedyChain(pool, startIdx, limit).chain;
+    if (!resolvedOriginLabel) {
+      resolvedOriginLabel =
+        originMode === 'map_point'
+          ? `Punto en mapa (${originCoords.lat.toFixed(4)},${originCoords.lng.toFixed(4)})`
+          : `Coordenadas (${originCoords.lat.toFixed(4)},${originCoords.lng.toFixed(4)})`;
+    }
+  } else {
+    // Modo auto_cluster: buscar el clúster más denso entre semillas candidatas
+    const seedIndices = pickDenseClusterSeedIndices(pool, limit);
+    let minChainDist = Infinity;
+
+    for (const seedIdx of seedIndices) {
+      const candidate = buildGreedyChain(pool, seedIdx, limit);
+      if (candidate.totalDistanceKm < minChainDist) {
+        minChainDist = candidate.totalDistanceKm;
+        bestChain = candidate.chain;
+      }
+    }
+
+    if (!resolvedOriginLabel) {
+      resolvedOriginLabel = 'Clúster más denso (Auto)';
+    }
+  }
+
+  // Refinamiento con 2-Opt conservando fija la parada de inicio
+  const optimizedChain = optimizeChain2Opt(bestChain);
+  const totalDistanceKm = calcChainDistanceKm(optimizedChain);
+
+  let totalCooldownMinutes = 0;
+  const stops: NycRouteStop[] = optimizedChain.map((quest, idx) => {
+    let distKm = 0;
+    let cdMins = 0;
+    if (idx > 0) {
+      const prev = optimizedChain[idx - 1];
+      distKm = getDistance(prev.lat, prev.lng, quest.lat, quest.lng);
+      cdMins = getCooldownMinutes(distKm);
+      totalCooldownMinutes += cdMins;
+    }
+    return {
+      quest,
+      stepNumber: idx + 1,
+      distanceFromPrevKm: distKm,
+      cooldownMinutes: cdMins,
+      stopKey: getQuestStopKey(quest),
+    };
+  });
+
+  const avgDistanceMeters =
+    stops.length > 1 ? Math.round((totalDistanceKm * 1000) / (stops.length - 1)) : 0;
+
+  return {
+    stops,
+    totalDistanceKm,
+    avgDistanceMeters,
+    totalCooldownMinutes: Number(totalCooldownMinutes.toFixed(1)),
+    originLabel: resolvedOriginLabel,
+    createdAt: Date.now(),
+  };
+}
+
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+/**
+ * Genera un archivo GPX válido compatible con PGSharp para importar la ruta óptima completa
+ */
+export function generateNycRouteGPX(routeStops: NycRouteStop[]): string {
+  const gpxHeader = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="PokeSkills Hub - NYC Quests" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>NYC Quest Route (${routeStops.length} paradas)</name>
+    <trkseg>`;
+
+  const points = routeStops
+    .map((s) => {
+      const safeName = escapeXml(`#${s.stepNumber}. ${s.quest.name || 'Pokeparada'} (${s.quest.rewards_string || 'Quest'})`);
+      const safeDesc = escapeXml(`${s.quest.conditions_string || ''} -> ${s.quest.rewards_string || ''}`);
+      return `      <trkpt lat="${s.quest.lat}" lon="${s.quest.lng}">
+        <name>${safeName}</name>
+        <desc>${safeDesc}</desc>
+      </trkpt>`;
+    })
+    .join('\n');
+
+  const gpxFooter = `
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  return `${gpxHeader}\n${points}\n${gpxFooter}`;
 }
