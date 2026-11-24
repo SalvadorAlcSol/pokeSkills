@@ -50,7 +50,9 @@ import {
   generateNycRouteGPX,
   fetchNycCloudSyncState,
   pushNycCloudSyncState,
-  POPULAR_PRESET_FILTERS
+  POPULAR_PRESET_FILTERS,
+  buildRewardsCatalog,
+  NycCatalogReward
 } from '../services/nycPokeMapService';
 import { getDistance } from '../utils/pogoMath';
 
@@ -236,14 +238,28 @@ function escapeHtml(text: string): string {
 // Icono personalizado para las Poképaradas en el mapa
 function createPokestopDivIcon(quest: NycQuest, isVisited: boolean, isSelected: boolean): L.DivIcon {
   const isEternatus = quest.rewards_string?.toLowerCase().includes('eternatus') || quest.rewards_ids === '890';
-  const isCandy = quest.rewards_string?.toLowerCase().includes('rare candy') || quest.rewards_ids === '1301';
+  const isCandyXl =
+    quest.rewards_ids === '1302' ||
+    quest.rewards_types === '9' ||
+    quest.rewards_string?.toLowerCase().includes('rare candy xl') ||
+    quest.rewards_string?.toLowerCase().includes('candy xl');
+  const isCandy =
+    !isCandyXl &&
+    (quest.rewards_ids === '1301' ||
+      quest.rewards_string?.toLowerCase().includes('rare candy') ||
+      quest.rewards_types === '12');
   const isStardust = quest.rewards_types === '3' || quest.rewards_string?.toLowerCase().includes('stardust');
+  const isMega = quest.rewards_types === '4' || quest.rewards_string?.toLowerCase().includes('mega');
 
   let bg = '#2563EB'; // Azul Pokestop
   let border = '#1D4ED8';
   let symbol = '📍';
 
-  if (isEternatus) {
+  if (isCandyXl) {
+    bg = 'linear-gradient(135deg, #06B6D4 0%, #2563EB 100%)'; // Cyan/Azul Eléctrico Caramelo XL
+    border = '#0891B2';
+    symbol = '💎';
+  } else if (isEternatus) {
     bg = '#9333EA'; // Púrpura Eternatus
     border = '#6B21A8';
     symbol = '🟣';
@@ -255,6 +271,10 @@ function createPokestopDivIcon(quest: NycQuest, isVisited: boolean, isSelected: 
     bg = '#10B981'; // Esmeralda Polvos
     border = '#047857';
     symbol = '💰';
+  } else if (isMega) {
+    bg = '#EC4899'; // Rosa Mega Energía
+    border = '#BE185D';
+    symbol = '🧬';
   }
 
   if (isVisited) {
@@ -461,7 +481,7 @@ export const INITIAL_VISITED_STOPS: string[] = [
 export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => {
   // Hidratar preset inicial y caché para arranque instantáneo sin perder estado al cambiar de app
   const initialPreset = useMemo(
-    () => readStorage<string>(NYC_STORAGE_KEYS.ACTIVE_PRESET, 'eternatus'),
+    () => readStorage<string>(NYC_STORAGE_KEYS.ACTIVE_PRESET, 'rare_candy_xl'),
     []
   );
 
@@ -555,6 +575,21 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     readStorage<string>(NYC_STORAGE_KEYS.SELECTED_REWARD, 'all')
   );
   const [activePreset, setActivePreset] = useState<string>(initialPreset);
+  const [activeRewardLabel, setActiveRewardLabel] = useState<string>(() => {
+    if (initialPreset === 'rare_candy_xl') return '💎 Caramelo Raro XL';
+    if (initialPreset === 'rare_candy') return '⭐ Caramelo Raro';
+    if (initialPreset === 'stardust_10000') return '💰 10,000 Polvos';
+    if (initialPreset === 'stardust_1000') return '💰 1,000+ Polvos';
+    if (initialPreset === 'eternatus') return '🟣 25 Caramelos Eternatus';
+    if (initialPreset === 'poffin') return '🥐 Pokochazo';
+    if (initialPreset === 'spinda') return '🌀 Spinda (#327)';
+    return '💎 Caramelo Raro XL';
+  });
+  const [isRewardsCatalogOpen, setIsRewardsCatalogOpen] = useState<boolean>(false);
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [catalogCategory, setCatalogCategory] = useState<string>('all');
+  const [selectedCatalogCodes, setSelectedCatalogCodes] = useState<string[]>([]);
+  const [isCatalogMultiSelect, setIsCatalogMultiSelect] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(
     initialCache ? new Date(initialCache.timestamp) : null
   );
@@ -1105,13 +1140,33 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
         let queryCodes = filterCodes;
         if (!queryCodes || queryCodes.length === 0) {
-          if (presetKey === 'eternatus') {
+          if (presetKey === 'rare_candy_xl') {
+            queryCodes = ['2,0,1302'];
+          } else if (presetKey === 'rare_candy') {
+            queryCodes = ['2,0,1301'];
+          } else if (presetKey === 'stardust_10000') {
+            queryCodes = ['3,10000,0'];
+          } else if (presetKey === 'stardust_1000') {
+            queryCodes = ['3,1000,0', '3,1500,0'];
+          } else if (presetKey === 'eternatus') {
             queryCodes = ['4,0,890'];
+          } else if (presetKey === 'poffin') {
+            queryCodes = ['2,0,709'];
+          } else if (presetKey === 'spinda') {
+            queryCodes = ['7,0,327'];
+          } else if (presetKey === 'mega_energy') {
+            const mCodes = [
+              ...(meta.filters?.t12 || []).map(id => `12,0,${id}`),
+              ...(meta.filters?.t4 || []).map(id => `4,0,${id}`)
+            ];
+            queryCodes = mCodes.length > 0 ? mCodes : ['12,0,6'];
           } else if (presetKey === 'all_popular') {
             queryCodes = POPULAR_PRESET_FILTERS.map(p => p.code);
+          } else if (presetKey.startsWith('code:')) {
+            queryCodes = [presetKey.slice(5)];
           } else {
             const match = POPULAR_PRESET_FILTERS.find(p => p.id === presetKey);
-            queryCodes = match ? [match.code] : ['4,0,890'];
+            queryCodes = match ? [match.code] : ['2,0,1302'];
           }
         }
 
@@ -1147,8 +1202,14 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
   }, []);
 
   // Manejador de atajos rápidos
-  const handleSelectPreset = (presetId: string, code: string) => {
+  const handleSelectPreset = (presetId: string, code: string, labelOverride?: string) => {
     setActivePreset(presetId);
+    if (labelOverride) {
+      setActiveRewardLabel(labelOverride);
+    } else {
+      const p = POPULAR_PRESET_FILTERS.find(x => x.id === presetId);
+      setActiveRewardLabel(p ? p.label : presetId);
+    }
     setSelectedCondition('all');
     setSelectedReward('all');
     setSearchTerm('');
@@ -1156,8 +1217,23 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
     loadData([code], presetId);
   };
 
+  const handleSelectMegaEnergy = () => {
+    setActivePreset('mega_energy');
+    setActiveRewardLabel('🧬 Mega Energía (Todas)');
+    setSelectedCondition('all');
+    setSelectedReward('all');
+    setSearchTerm('');
+    setSelectedQuest(null);
+    const mCodes = [
+      ...(availableFilters?.t12 || []).map(id => `12,0,${id}`),
+      ...(availableFilters?.t4 || []).map(id => `4,0,${id}`)
+    ];
+    loadData(mCodes.length > 0 ? mCodes : ['12,0,6'], 'mega_energy');
+  };
+
   const handleSelectAllPopular = () => {
     setActivePreset('all_popular');
+    setActiveRewardLabel('🎯 Todas las Populares');
     setSelectedCondition('all');
     setSelectedReward('all');
     setSearchTerm('');
@@ -1166,6 +1242,44 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
       POPULAR_PRESET_FILTERS.map(p => p.code),
       'all_popular'
     );
+  };
+
+  // Catálogo completo de recompensas en vivo
+  const fullRewardsCatalog = useMemo(() => {
+    return buildRewardsCatalog(availableFilters);
+  }, [availableFilters]);
+
+  // Filtrado dentro del modal del catálogo
+  const filteredCatalog = useMemo(() => {
+    return fullRewardsCatalog.filter(item => {
+      if (catalogCategory !== 'all' && item.category !== catalogCategory) {
+        return false;
+      }
+      if (catalogSearch.trim()) {
+        const q = catalogSearch.toLowerCase().trim();
+        const matchLabel = item.label.toLowerCase().includes(q);
+        const matchCat = item.categoryLabel.toLowerCase().includes(q);
+        const matchCode = item.code.toLowerCase().includes(q);
+        if (!matchLabel && !matchCat && !matchCode) return false;
+      }
+      return true;
+    });
+  }, [fullRewardsCatalog, catalogCategory, catalogSearch]);
+
+  const handleSelectCatalogReward = (reward: NycCatalogReward) => {
+    setIsRewardsCatalogOpen(false);
+    handleSelectPreset(`code:${reward.code}`, reward.code, `${reward.icon} ${reward.label}`);
+  };
+
+  const handleSelectMultipleCatalogRewards = (codes: string[], groupLabel: string) => {
+    setIsRewardsCatalogOpen(false);
+    setActivePreset('custom_multi');
+    setActiveRewardLabel(groupLabel);
+    setSelectedCondition('all');
+    setSelectedReward('all');
+    setSearchTerm('');
+    setSelectedQuest(null);
+    loadData(codes, 'custom_multi');
   };
 
   // Condiciones (desafíos) únicas
@@ -2938,25 +3052,25 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
 
           {/* Botones de Recompensas Rápidas */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            {/* Botón Principal: 25 Caramelos Eternatus */}
+            {/* 💎 Caramelo Raro XL (PREMIER) */}
             <button
-              onClick={() => handleSelectPreset('eternatus', '4,0,890')}
+              onClick={() => handleSelectPreset('rare_candy_xl', '2,0,1302', '💎 Caramelo Raro XL')}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
-                activePreset === 'eternatus'
-                  ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300 scale-105'
-                  : 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200'
+                activePreset === 'rare_candy_xl'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-300 shadow-md ring-2 ring-cyan-300 scale-105'
+                  : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-950 border-cyan-300'
               }`}
             >
-              <span className="text-sm">🟣</span>
-              <span>25 Caramelos Eternatus</span>
-              <span className="bg-purple-800 text-purple-100 text-[9px] px-1.5 py-0.2 rounded-full font-bold">
-                Hoy
+              <span className="text-sm">💎</span>
+              <span>Caramelo Raro XL</span>
+              <span className="bg-cyan-800 text-cyan-100 text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+                650+ NY
               </span>
             </button>
 
-            {/* Caramelo Raro */}
+            {/* ⭐ Caramelo Raro */}
             <button
-              onClick={() => handleSelectPreset('rare_candy', '2,0,1301')}
+              onClick={() => handleSelectPreset('rare_candy', '2,0,1301', '⭐ Caramelo Raro')}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
                 activePreset === 'rare_candy'
                   ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md ring-2 ring-amber-300 scale-105'
@@ -2967,22 +3081,38 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               <span>Caramelo Raro</span>
             </button>
 
-            {/* 1000+ Polvos */}
+            {/* 💰 10,000 Polvos */}
             <button
-              onClick={() => handleSelectPreset('stardust_1000', '3,1000,0')}
+              onClick={() => handleSelectPreset('stardust_10000', '3,10000,0', '💰 10,000 Polvos')}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
+                activePreset === 'stardust_10000'
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-300 scale-105'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300'
+              }`}
+            >
+              <span>💰</span>
+              <span>10,000 Polvos</span>
+              <span className="bg-emerald-800 text-emerald-100 text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+                620+ NY
+              </span>
+            </button>
+
+            {/* 💰 1,000+ Polvos */}
+            <button
+              onClick={() => handleSelectPreset('stardust_1000', '3,1000,0', '💰 1,000+ Polvos')}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
                 activePreset === 'stardust_1000'
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-300 scale-105'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200'
+                  ? 'bg-emerald-700 text-white border-emerald-800 shadow-md ring-2 ring-emerald-300 scale-105'
+                  : 'bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 border-emerald-200'
               }`}
             >
               <span>💰</span>
               <span>1,000+ Polvos</span>
             </button>
 
-            {/* Pokochazo */}
+            {/* 🥐 Pokochazo */}
             <button
-              onClick={() => handleSelectPreset('poffin', '2,0,709')}
+              onClick={() => handleSelectPreset('poffin', '2,0,709', '🥐 Pokochazo')}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
                 activePreset === 'poffin'
                   ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-300 scale-105'
@@ -2993,9 +3123,22 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               <span>Pokochazo</span>
             </button>
 
-            {/* Spinda */}
+            {/* 🧬 Mega Energía */}
             <button
-              onClick={() => handleSelectPreset('spinda', '7,0,327')}
+              onClick={handleSelectMegaEnergy}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
+                activePreset === 'mega_energy'
+                  ? 'bg-fuchsia-600 text-white border-fuchsia-700 shadow-md ring-2 ring-fuchsia-300 scale-105'
+                  : 'bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-900 border-fuchsia-200'
+              }`}
+            >
+              <span>🧬</span>
+              <span>Mega Energía</span>
+            </button>
+
+            {/* 🌀 Spinda */}
+            <button
+              onClick={() => handleSelectPreset('spinda', '7,0,327', '🌀 Spinda (#327)')}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
                 activePreset === 'spinda'
                   ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-300 scale-105'
@@ -3006,7 +3149,20 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               <span>Spinda</span>
             </button>
 
-            {/* Ver Todos */}
+            {/* 🟣 Eternatus */}
+            <button
+              onClick={() => handleSelectPreset('eternatus', '4,0,890', '🟣 25 Caramelos Eternatus')}
+              className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
+                activePreset === 'eternatus'
+                  ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300 scale-105'
+                  : 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200'
+              }`}
+            >
+              <span>🟣</span>
+              <span>Eternatus</span>
+            </button>
+
+            {/* 🎯 Ver Populares */}
             <button
               onClick={handleSelectAllPopular}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-2 ${
@@ -3016,7 +3172,18 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               }`}
             >
               <span>🎯</span>
-              <span>Ver Todos</span>
+              <span>Populares</span>
+            </button>
+
+            {/* 🎁 BOTÓN DESTACADO: TODAS LAS RECOMPENSAS */}
+            <button
+              onClick={() => setIsRewardsCatalogOpen(true)}
+              className="px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-sm border-2 bg-gradient-to-r from-purple-700 via-indigo-600 to-blue-700 hover:from-purple-800 hover:to-blue-800 text-white border-purple-300/80 ring-2 ring-purple-400/40 hover:scale-102"
+              title="Abrir catálogo exhaustivo con todas las recompensas devueltas por nycpokemap.com"
+            >
+              <Gift className="w-4 h-4 text-[#FFE550]" />
+              <span>🎁 Todo el Catálogo ({fullRewardsCatalog.length || '180+'})</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             </button>
 
             <button
@@ -3027,6 +3194,47 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
               <Copy className="w-3.5 h-3.5 text-[#FFE550]" />
               <span>Copiar Lista ({Math.min(filteredQuests.length, 100)})</span>
             </button>
+          </div>
+
+          {/* Banner de Recompensa Activa + Generador Rápido de Ruta */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-950 text-white text-xs border border-slate-800 shadow-md">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider shrink-0">
+                Recompensa
+              </span>
+              <span className="font-black text-sm text-cyan-300 truncate">{activeRewardLabel}</span>
+              <span className="text-slate-300 font-semibold text-xs hidden md:inline">
+                • {filteredQuests.length.toLocaleString()} paradas encontradas ({unvisitedFilteredCount.toLocaleString()} sin visitar)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleGenerateRoute({ openHud: false })}
+                className="px-3.5 py-1.5 rounded-xl bg-[#1160C0] hover:bg-blue-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                title="Generar inmediatamente la ruta óptima más corta para esta recompensa"
+              >
+                <Route className="w-3.5 h-3.5 text-[#FFE550]" />
+                <span>⚡ Generar Ruta ({routeTargetCount})</span>
+              </button>
+
+              <button
+                onClick={() => setIsRoutePlannerOpen(prev => !prev)}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1 cursor-pointer border border-slate-700"
+                title="Ajustar opciones de ruta (número de paradas, punto de inicio)"
+              >
+                <Crosshair className="w-3.5 h-3.5 text-slate-400" />
+                <span>Ajustar</span>
+              </button>
+
+              <button
+                onClick={() => setIsRewardsCatalogOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Gift className="w-3.5 h-3.5 text-purple-200" />
+                <span>Explorar Otras</span>
+              </button>
+            </div>
           </div>
 
           {/* Fila de Filtros: Buscador + Dropdown Desafío + Dropdown Recompensa */}
@@ -3346,6 +3554,245 @@ export const NycQuestsTool: React.FC<NycQuestsToolProps> = ({ onBackToHub }) => 
           </div>
         )}
       </main>
+
+      {/* Modal: Catálogo Exhaustivo de Todas las Recompensas de NYC */}
+      {isRewardsCatalogOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Cabecera */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/30 border border-purple-400/40 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                  🎁
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-black flex items-center gap-2 truncate">
+                    <span>Catálogo de Recompensas en Vivo de NYC</span>
+                    <span className="bg-[#FFE550] text-[#0B1B3C] text-[10px] font-black px-2 py-0.5 rounded-full uppercase shrink-0">
+                      {fullRewardsCatalog.length} disponibles
+                    </span>
+                  </h3>
+                  <p className="text-xs text-purple-200/90 font-medium truncate">
+                    Selecciona Caramelos XL, Polvos, Mega Energía o Pokémon para ver paradas y generar rutas óptimas
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsRewardsCatalogOpen(false)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Buscador + Selector de Categoría */}
+            <div className="p-3.5 sm:p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    placeholder="Buscar recompensa (ej: Caramelo XL, Polvo, Charizard, Spinda, Beldum...)"
+                    className="w-full pl-9 pr-7 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-purple-600 font-semibold shadow-2xs"
+                  />
+                  {catalogSearch && (
+                    <button
+                      onClick={() => setCatalogSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <button
+                    onClick={() => {
+                      setIsCatalogMultiSelect(prev => !prev);
+                      setSelectedCatalogCodes([]);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                      isCatalogMultiSelect
+                        ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{isCatalogMultiSelect ? 'Modo Combinar (ON)' : 'Combinar Múltiples'}</span>
+                  </button>
+
+                  {isCatalogMultiSelect && selectedCatalogCodes.length > 0 && (
+                    <button
+                      onClick={() =>
+                        handleSelectMultipleCatalogRewards(
+                          selectedCatalogCodes,
+                          `Combinada (${selectedCatalogCodes.length} recompensas)`
+                        )
+                      }
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <span>Cargar ({selectedCatalogCodes.length})</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Pestañas de Categoría */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                {[
+                  { id: 'all', label: 'Todas', icon: '🎯' },
+                  { id: 'candy_xl', label: 'Caramelos XL', icon: '💎' },
+                  { id: 'candy', label: 'Caramelos', icon: '⭐' },
+                  { id: 'stardust', label: 'Polvos', icon: '💰' },
+                  { id: 'mega', label: 'Mega Energía', icon: '🧬' },
+                  { id: 'item', label: 'Objetos & Bayas', icon: '🎒' },
+                  { id: 'pokemon', label: 'Pokémon', icon: '🐾' },
+                ].map(cat => {
+                  const count =
+                    cat.id === 'all'
+                      ? fullRewardsCatalog.length
+                      : fullRewardsCatalog.filter(c => c.category === cat.id).length;
+                  const isCurrent = catalogCategory === cat.id;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCatalogCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-xl font-black transition-all flex items-center gap-1.5 shrink-0 border cursor-pointer ${
+                        isCurrent
+                          ? 'bg-purple-600 text-white border-purple-700 shadow-xs ring-1 ring-purple-300'
+                          : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isCurrent ? 'bg-purple-800 text-purple-100' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Listado de Recompensas */}
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3">
+              {filteredCatalog.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 space-y-2">
+                  <div className="text-3xl">🔍</div>
+                  <p className="text-sm font-bold">No se encontraron recompensas con esos términos.</p>
+                  <button
+                    onClick={() => {
+                      setCatalogSearch('');
+                      setCatalogCategory('all');
+                    }}
+                    className="text-xs text-purple-600 font-extrabold hover:underline cursor-pointer"
+                  >
+                    Restablecer filtros
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {filteredCatalog.map(item => {
+                    const isSelected = selectedCatalogCodes.includes(item.code);
+                    const isCurrentActive =
+                      activePreset === item.id ||
+                      activePreset === `code:${item.code}` ||
+                      (item.id === 'rare_candy_xl' && activePreset === 'rare_candy_xl') ||
+                      (item.id === 'rare_candy' && activePreset === 'rare_candy');
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3 rounded-2xl border-2 transition-all flex items-center justify-between gap-2.5 ${
+                          isSelected
+                            ? 'bg-purple-50 border-purple-500 shadow-sm'
+                            : isCurrentActive
+                            ? 'bg-cyan-50 border-cyan-400 shadow-xs'
+                            : 'bg-white hover:bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {isCatalogMultiSelect && (
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedCatalogCodes(prev =>
+                                  prev.includes(item.code)
+                                    ? prev.filter(c => c !== item.code)
+                                    : [...prev, item.code]
+                                );
+                              }}
+                              className="w-4 h-4 text-purple-600 rounded-md border-slate-300 focus:ring-purple-500 cursor-pointer shrink-0"
+                            />
+                          )}
+
+                          <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg shrink-0">
+                            {item.icon}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-black text-slate-900 truncate">
+                                {item.label}
+                              </span>
+                              {isCurrentActive && (
+                                <span className="bg-cyan-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter shrink-0">
+                                  EN MAPA
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-semibold text-slate-500 block truncate">
+                              {item.categoryLabel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {!isCatalogMultiSelect && (
+                          <button
+                            onClick={() => handleSelectCatalogReward(item)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shrink-0 ${
+                              isCurrentActive
+                                ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+                                : 'bg-[#1160C0] text-white hover:bg-blue-700'
+                            }`}
+                          >
+                            Cargar
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Pie del Modal */}
+            <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <span className="text-base">💡</span>
+                <span>
+                  Al pulsar <strong>Cargar</strong>, se obtendrán al instante todas las Poképaradas que dan esa recompensa en NYC para generar rutas óptimas sin caminar de más.
+                </span>
+              </div>
+              <button
+                onClick={() => setIsRewardsCatalogOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal / Gestor de Paradas Visitadas */}
       {isVisitedManagerOpen && (

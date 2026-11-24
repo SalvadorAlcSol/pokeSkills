@@ -170,18 +170,160 @@ export async function fetchNycQuestsByFilters(filterCodes: string[]): Promise<Ny
  * Filtros rápidos recomendados de alto valor para entrenadores PGSharp
  */
 export const POPULAR_PRESET_FILTERS = [
-  { id: 'eternatus', label: '🟣 25 Caramelos Eternatus', code: '4,0,890', category: 'candy' },
+  { id: 'rare_candy_xl', label: '💎 Caramelo Raro XL', code: '2,0,1302', category: 'candy' },
   { id: 'rare_candy', label: '⭐ Caramelo Raro', code: '2,0,1301', category: 'candy' },
+  { id: 'stardust_10000', label: '💰 10,000 Polvos', code: '3,10000,0', category: 'stardust' },
   { id: 'stardust_1000', label: '💰 1,000+ Polvos', code: '3,1000,0', category: 'stardust' },
-  { id: 'stardust_1500', label: '💰 1,500 Polvos', code: '3,1500,0', category: 'stardust' },
   { id: 'poffin', label: '🥐 Pokochazo (Poffin)', code: '2,0,709', category: 'item' },
   { id: 'golden_razz', label: '✨ Baya Frambu Dorada', code: '2,0,706', category: 'item' },
   { id: 'silver_pinap', label: '🍍 Baya Pinia Plateada', code: '2,0,708', category: 'item' },
   { id: 'spinda', label: '🌀 Spinda (#327)', code: '7,0,327', category: 'pokemon' },
+  { id: 'eternatus', label: '🟣 25 Caramelos Eternatus', code: '4,0,890', category: 'candy' },
   { id: 'bulbasaur', label: '🍃 Bulbasaur (#1)', code: '7,0,1', category: 'pokemon' },
   { id: 'charmander', label: '🔥 Charmander (#4)', code: '7,0,4', category: 'pokemon' },
   { id: 'squirtle', label: '💧 Squirtle (#7)', code: '7,0,7', category: 'pokemon' },
 ];
+
+export interface NycCatalogReward {
+  id: string;
+  category: 'candy_xl' | 'candy' | 'stardust' | 'mega' | 'item' | 'pokemon';
+  categoryLabel: string;
+  label: string;
+  code: string;
+  icon: string;
+  isPopular?: boolean;
+}
+
+/**
+ * Construye el catálogo exhaustivo y clasificado de todas las recompensas devueltas en vivo por nycpokemap.com
+ */
+export function buildRewardsCatalog(filters: NycFilterData | null): NycCatalogReward[] {
+  if (!filters) return [];
+  const catalog: NycCatalogReward[] = [];
+
+  // 1. Items (t2)
+  if (Array.isArray(filters.t2)) {
+    for (const idStr of filters.t2) {
+      if (idStr === '1302') {
+        catalog.push({
+          id: 'rare_candy_xl',
+          category: 'candy_xl',
+          categoryLabel: 'Caramelos XL',
+          label: 'Caramelo Raro XL',
+          code: '2,0,1302',
+          icon: '💎',
+          isPopular: true,
+        });
+      } else if (idStr === '1301') {
+        catalog.push({
+          id: 'rare_candy',
+          category: 'candy',
+          categoryLabel: 'Caramelos',
+          label: 'Caramelo Raro',
+          code: '2,0,1301',
+          icon: '⭐',
+          isPopular: true,
+        });
+      } else {
+        const itemName = getItemDisplayName(idStr);
+        const isPop = idStr === '709' || idStr === '706' || idStr === '708';
+        catalog.push({
+          id: `item_${idStr}`,
+          category: 'item',
+          categoryLabel: 'Objetos & Bayas',
+          label: itemName,
+          code: `2,0,${idStr}`,
+          icon: idStr === '709' ? '🥐' : idStr === '706' ? '✨' : idStr === '708' ? '🍍' : '🎒',
+          isPopular: isPop,
+        });
+      }
+    }
+  }
+
+  // 2. XL Candy por especie (t9)
+  if (Array.isArray(filters.t9)) {
+    for (const idStr of filters.t9) {
+      const pName = getPokemonDisplayName(idStr);
+      catalog.push({
+        id: `xl_candy_${idStr}`,
+        category: 'candy_xl',
+        categoryLabel: 'Caramelos XL',
+        label: `Caramelo XL (${pName})`,
+        code: `9,0,${idStr}`,
+        icon: '🔺',
+        isPopular: true,
+      });
+    }
+  }
+
+  // 3. Candy / Mega Energy por especie (t12)
+  if (Array.isArray(filters.t12)) {
+    for (const idStr of filters.t12) {
+      const pName = getPokemonDisplayName(idStr);
+      catalog.push({
+        id: `candy_mega_${idStr}`,
+        category: 'mega',
+        categoryLabel: 'Mega Energía / Caramelos',
+        label: `Mega Energía / Caramelos (${pName})`,
+        code: `12,0,${idStr}`,
+        icon: '🧬',
+        isPopular: true,
+      });
+    }
+  }
+
+  // 4. Mega Energy directa (t4)
+  if (Array.isArray(filters.t4)) {
+    for (const idStr of filters.t4) {
+      const pName = getPokemonDisplayName(idStr);
+      catalog.push({
+        id: `mega_${idStr}`,
+        category: 'mega',
+        categoryLabel: 'Mega Energía',
+        label: `Mega Energía (${pName})`,
+        code: `4,0,${idStr}`,
+        icon: '🧬',
+        isPopular: true,
+      });
+    }
+  }
+
+  // 5. Polvos Estelares (t3)
+  if (Array.isArray(filters.t3)) {
+    const sortedStardust = [...filters.t3].sort((a, b) => Number(b) - Number(a));
+    for (const amt of sortedStardust) {
+      const num = Number(amt);
+      catalog.push({
+        id: `stardust_${amt}`,
+        category: 'stardust',
+        categoryLabel: 'Polvo Estelar',
+        label: `${num.toLocaleString()} Polvos Estelares`,
+        code: `3,${amt},0`,
+        icon: '💰',
+        isPopular: num >= 1000,
+      });
+    }
+  }
+
+  // 6. Encuentros Pokémon (t7)
+  if (Array.isArray(filters.t7)) {
+    for (const idStr of filters.t7) {
+      const pName = getPokemonDisplayName(idStr);
+      const isPop = idStr === '327' || idStr === '890' || idStr === '1' || idStr === '4' || idStr === '7';
+      catalog.push({
+        id: `pokemon_${idStr}`,
+        category: 'pokemon',
+        categoryLabel: 'Encuentros Pokémon',
+        label: pName,
+        code: `7,0,${idStr}`,
+        icon: '🐾',
+        isPopular: isPop,
+      });
+    }
+  }
+
+  return catalog;
+}
 
 /**
  * Formatea las coordenadas exactamente para PGSharp: lat,long sin espacios después de la coma.
